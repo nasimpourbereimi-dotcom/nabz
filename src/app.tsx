@@ -63,7 +63,7 @@ export function App() {
   const tab = route.tab;
   return (
     <>
-      {tab === 'today' && <TodayScreen onOpenData={() => setRoute({ screen: 'data' })} />}
+      {tab === 'today' && <TodayScreen onOpenData={() => setRoute({ screen: 'data' })} onOpenImport={() => setRoute({ screen: 'import', firstRun: false })} />}
       {tab === 'workouts' && <WorkoutsScreen onOpen={(id) => setRoute({ screen: 'workout', id })} />}
       {tab === 'trends' && <SoonScreen title={fa.tabs.trends} />}
       {tab === 'wrapped' && <SoonScreen title={fa.tabs.wrapped} />}

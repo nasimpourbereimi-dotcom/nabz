@@ -121,6 +121,53 @@ export const fa = {
     } as Record<string, string>,
   },
 
+  sync: {
+    button: 'سینک',
+    lastSync: (when: string) => `سینک: ${when}`,
+    waitingTitle: 'داده‌ها رو آوردی؟',
+    waitingLead: 'Shortcut «نبض-سینک» داده‌های تازه رو کپی می‌کنه. برگشتی، اینجا رو بزن و «Paste» رو تأیید کن.',
+    paste: 'چسباندن داده‌ها',
+    manual: 'دستی بچسبون',
+    manualPlaceholder: 'متن کپی‌شده رو اینجا بچسبون',
+    manualApply: 'خواندن متن',
+    applying: 'داریم داده‌های تازه رو می‌چینیم…',
+    doneTitle: 'سینک شد',
+    done: (w: number, i: number, d: number) =>
+      [w ? `${faNumber(w)} تمرین تازه` : '', i ? `${faNumber(i)} تمرین پیداشده از روی ضربان` : '', `${faNumber(d)} روز به‌روز شد`]
+        .filter(Boolean).join(' · '),
+    guessedNote: 'نوع تمرین‌های تازه رو حدس زدیم؛ توی صفحه‌ی هر تمرین با یه لمس تأییدش کن تا دفعه‌ی بعد دقیق‌تر حدس بزنیم.',
+    close: 'باشه',
+    tooOldTitle: 'از آخرین سینک خیلی گذشته',
+    tooOld: (d: number) => `${faNumber(d)} روز داده یه‌جا توی کلیپ‌بورد جا نمیشه. بهتره یه export.zip تازه از Health بگیری؛ تکراری‌ها دوبار حساب نمیشن.`,
+    tryAnyway: 'باز هم امتحان کن',
+    goExport: 'خواندن export.zip',
+    errors: {
+      empty: 'کلیپ‌بورد خالی بود. Shortcut «نبض-سینک» رو یه بار دیگه اجرا کن و برگرد.',
+      'not-json': 'متن کلیپ‌بورد از Shortcut نبض نیست. یه بار دیگه سینک رو بزن.',
+      'not-nabz': 'متن کلیپ‌بورد از Shortcut نبض نیست. یه بار دیگه سینک رو بزن.',
+      version: 'این خروجی با نسخه‌ی دیگه‌ای از Shortcut ساخته شده. Shortcut رو طبق راهنما به‌روز کن.',
+      clipboard: 'اجازه‌ی خواندن کلیپ‌بورد داده نشد. «دستی بچسبون» رو بزن.',
+      apply: 'موقع ذخیره یه چیزی گیر کرد. داده‌های قبلی سالم‌ان؛ دوباره امتحان کن.',
+    } as Record<string, string>,
+    retry: 'دوباره',
+  },
+
+  confirm: {
+    question: (t: string) => `${t} بود؟`,
+    yes: 'آره',
+    no: 'نه، چیز دیگه‌ای بود',
+    pick: 'چه تمرینی بود؟',
+    thanks: 'ثبت شد؛ دفعه‌ی بعد بهتر حدس می‌زنیم.',
+    inferred: 'این جلسه رو از روی ضربانت پیدا کردیم.',
+  },
+
+  rpe: {
+    question: 'چقدر سخت بود؟',
+    scale: '۱ خیلی راحت · ۱۰ نهایت توانت',
+    saved: (n: number) => `سختی جلسه: ${faNumber(n)} از ۱۰`,
+    change: 'تغییر',
+  },
+
   soon: { title: 'به‌زودی', lead: 'این بخش توی قدم‌های بعدی ساخته میشه.' },
 
   settings: {

@@ -144,3 +144,13 @@ button.list-item { width: 100%; text-align: right; color: inherit; font: inherit
 .ring-fill { animation: ring 0.9s ease-out both; }
 @keyframes ring { from { stroke-dasharray: 0 340; } }
 @media (prefers-reduced-motion: reduce) { .ring-fill { animation: none; } }
+button.chip { font: inherit; font-size: 12px; cursor: pointer; }
+.input {
+  width: 100%; background: var(--raised); border: 1px solid var(--border); border-radius: 12px;
+  color: var(--text); padding: 10px 12px; font-size: 12px; font-family: ui-monospace, monospace; resize: vertical;
+}
+.choice {
+  min-height: 44px; min-width: 44px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--raised); color: var(--text); font: inherit; font-size: 14px; font-weight: 700;
+}
+.choice[aria-pressed='true'] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }

@@ -5,6 +5,7 @@ import type { Workout } from './types';
 import {
   ageAt, estimateProfile, hrRecovery1m, hrStats, trimp, trimpFromAverage, zoneSeconds, type HrProfile,
 } from '../analytics/hr';
+import { shapeFeatures } from '../analytics/workoutShape';
 
 /** Read-only (safe inside liveQuery): stored profile, or a fresh estimate. */
 export async function readProfile(db: NabzDB): Promise<HrProfile> {
@@ -54,6 +55,8 @@ export async function enrichWorkouts(db: NabzDB, onlyIds?: string[]): Promise<vo
     } else if (w.hrAvg !== undefined) {
       next.load = trimpFromAverage(w.durationSec, w.hrAvg, profile);
     }
+    const f = shapeFeatures(samples, w, profile, w.steps ?? 0);
+    if (f) next.features = f;
     // Prefer the watch's own recovery measurement (recorded within 10 min after the end).
     const health = recoveries.find((r) => r.start >= w.end - 60_000 && r.start <= w.end + 10 * 60_000);
     next.hrRecovery1m = typeof health?.value === 'number' ? health.value : hrRecovery1m(samples, w.end);

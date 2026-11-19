@@ -7,11 +7,16 @@ import { useLive } from '../ui/useLive';
 import { IconData, IconSpark } from '../ui/icons';
 import { LoadChart, ReadinessRing, WeekBars } from '../ui/charts';
 import { dayIndex } from '../analytics/dates';
+import { useSync } from '../sync/useSync';
+import { SyncPanel } from '../ui/SyncPanel';
+import { faTime } from '../lib/jalali';
+import { tehranDateKey } from '../lib/time';
 
 const S = fa.today;
 
-export function TodayScreen({ onOpenData }: { onOpenData: () => void }) {
+export function TodayScreen({ onOpenData, onOpenImport }: { onOpenData: () => void; onOpenImport: () => void }) {
   const m = useLive(() => loadToday(getDB()));
+  const sync = useSync();
 
   return (
     <div class="screen fade-in">
@@ -21,15 +26,22 @@ export function TodayScreen({ onOpenData }: { onOpenData: () => void }) {
           <h1 class="h1">{S.title}</h1>
         </div>
         <div class="row" style="gap:8px;margin-top:4px">
-          {m?.lastSync && (
-            <div class="chip">
-              <span class="lamp" />
-              {S.lastData(faDate(m.lastSync))}
-            </div>
-          )}
+          <button class="chip" style="min-height:44px" onClick={() => sync.launch()} aria-label={fa.sync.button}>
+            <span class="lamp" />
+            {m?.lastSync ? fa.sync.lastSync(faSyncTime(m.lastSync)) : fa.sync.button}
+          </button>
           <button class="icon-btn" aria-label={fa.settings.title} onClick={onOpenData}><IconData size={20} /></button>
         </div>
       </header>
+
+      <SyncPanel
+        state={sync.state}
+        onPaste={sync.paste}
+        onApplyText={sync.applyText}
+        onForce={() => sync.launch(true)}
+        onExport={() => { sync.reset(); onOpenImport(); }}
+        onClose={sync.reset}
+      />
 
       {m && !m.hasData && <div class="card suggest" style="margin-top:18px;line-height:1.8;font-size:14px">{S.noData}</div>}
 
@@ -126,4 +138,12 @@ function Legend({ color, label }: { color: string; label: string }) {
       {label}
     </span>
   );
+}
+
+/** "امروز ۱۸:۴۰" / "دیروز ۲۳:۰۰" / "۲۵ آبان" */
+function faSyncTime(ms: number): string {
+  const d = tehranDateKey(ms), today = tehranDateKey(Date.now()), y = tehranDateKey(Date.now() - 86_400_000);
+  if (d === today) return `امروز ${faTime(ms)}`;
+  if (d === y) return `دیروز ${faTime(ms)}`;
+  return faDayLabel(ms).split(' ').slice(1).join(' ');
 }

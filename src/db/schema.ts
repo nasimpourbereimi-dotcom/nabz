@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type {
-  DailyMetrics, HrBucket, HrSample, InsightLogEntry, Rollup, Sample, SettingRow, SyncLogEntry, Workout,
+  DailyMetrics, HrBucket, HrSample, InsightLogEntry, IntervalRow, Rollup, Sample, SettingRow, SyncLogEntry, Workout,
 } from './types';
 
 export class NabzDB extends Dexie {
@@ -13,10 +13,11 @@ export class NabzDB extends Dexie {
   settings!: Table<SettingRow, string>;
   rollups!: Table<Rollup, string>;
   insightLog!: Table<InsightLogEntry, number>;
+  intervalSamples!: Table<IntervalRow, [string, string, number, number]>;
 
   constructor(name = 'nabz') {
     super(name);
-    // Phase 2 (program / sessionPlan / setLog) will come as version(2); keep v1 stable.
+    // Phase 2 (program / sessionPlan / setLog) will come as a later version; never edit old versions.
     this.version(1).stores({
       workouts: 'id, start, end, type, source',
       hrSamples: 't, workoutId',
@@ -28,11 +29,16 @@ export class NabzDB extends Dexie {
       rollups: 'key',
       insightLog: '++id, insightId, shownAt',
     });
+    // v2: Shortcuts sync keeps interval samples per source so days can be recomputed idempotently.
+    this.version(2).stores({
+      intervalSamples: '[type+source+start+end], [type+start]',
+    });
   }
 }
 
 export const TABLES = [
   'workouts', 'hrSamples', 'hrBuckets', 'samples', 'dailyMetrics', 'syncLog', 'settings', 'rollups', 'insightLog',
+  'intervalSamples',
 ] as const;
 export type TableName = (typeof TABLES)[number];
 

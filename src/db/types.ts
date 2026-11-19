@@ -18,6 +18,11 @@ export interface Workout {
   hrMin?: number;
   hrRecovery1m?: number;
   indoor?: boolean;
+  steps?: number; // steps during the workout window
+  /** HR-shape features used to guess/learn workout types (analytics/workoutShape) */
+  features?: import('../analytics/workoutShape').ShapeFeatures;
+  /** guess confidence 0..1 when typeSource === 'guessed' */
+  typeConfidence?: number;
   // Filled by analytics (step 2):
   load?: number; // TRIMP
   zones?: [number, number, number, number, number]; // seconds per zone
@@ -51,6 +56,15 @@ export interface Sample {
   end: number;
   value: number | string; // number, or sleep stage
   sourceName?: string;
+}
+
+/** High-volume interval samples from Shortcuts (export aggregates these straight into dailyMetrics). */
+export interface IntervalRow {
+  type: 'activeEnergy' | 'exerciseMin' | 'steps';
+  source: string;
+  start: number;
+  end: number;
+  value: number;
 }
 
 export interface DailyMetrics {

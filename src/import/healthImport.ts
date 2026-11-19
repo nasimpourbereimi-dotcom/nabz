@@ -302,6 +302,7 @@ export async function importHealthExport(
   const buckets = new BucketAgg();
   const days = new Map<string, DayAcc>();
   const years = new Set<string>();
+  const workoutSteps = new Map<string, PerSource>();
   let hrBatch: HrSample[] = [];
   let sampleBatch: Sample[] = [];
   const pendingWrites: Promise<unknown>[] = [];
@@ -373,7 +374,13 @@ export async function importHealthExport(
     switch (kind) {
       case 'energy': addTo(d.energy, src, energyToKcal(v, attr(raw, 'unit'))); return;
       case 'exercise': addTo(d.exercise, src, v); return;
-      case 'steps': addTo(d.steps, src, v); return;
+      case 'steps': {
+        addTo(d.steps, src, v);
+        // steps during a workout feed the type-guessing features; count only the Watch-like max source later
+        const wid = windows.find(start);
+        if (wid) { const ws = workoutSteps.get(wid) ?? new Map<string, number>(); addTo(ws, src, v); workoutSteps.set(wid, ws); }
+        return;
+      }
       case 'restingHR': d.resting.push(v); break;
       case 'hrvSDNN': d.hrv.push(v); break;
       case 'vo2max': d.vo2.push(v); break;
@@ -407,6 +414,11 @@ export async function importHealthExport(
 
   const dailyRows = [...days.entries()].map(([date, acc]) => finalizeDay(date, acc));
   for (let i = 0; i < dailyRows.length; i += BATCH) await db.dailyMetrics.bulkPut(dailyRows.slice(i, i + BATCH));
+
+  if (workoutSteps.size) {
+    const ws = await db.workouts.bulkGet([...workoutSteps.keys()]);
+    await db.workouts.bulkPut(ws.filter((w): w is Workout => !!w).map((w) => ({ ...w, steps: Math.round(maxSource(workoutSteps.get(w.id)!) ?? 0) })));
+  }
 
   counts.days = days.size;
   counts.years = years.size;

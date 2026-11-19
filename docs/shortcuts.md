@@ -62,6 +62,15 @@ clear queue.json
   }
 }
 ```
+### Accepted shapes (implemented in `src/sync/payload.ts`)
+- Each list may be **tuples** (as above), **dictionaries** (`{"date"|"t"|"start", "value"|"v", "end", "source"}`),
+  or **columnar** parallel lists (`{"t": [...], "v": [...]}` / `{"start": [...], "end": [...], "v": [...], "source": [...]}`).
+  Columnar is what the Shortcuts build uses: "Get Details of Health Samples" on a whole list, no per-item loops.
+- `workouts` may be the queue file as-is: `{"items": [...]}`.
+- Interval samples and sleep carry an optional `source` so the app can take the max source per day
+  (iPhone + Watch steps would otherwise double count).
+- Step-by-step Persian build instructions: `docs/shortcuts-guide.fa.md`.
+
 The exact output format of Shortcuts date/number values (locale! the phone may output Persian digits
 or localized dates) MUST be checked against a real payload from the owner and normalized in the app's
 parser. Be tolerant: accept Persian/Arabic digits and several date formats.
