@@ -10,6 +10,7 @@ import { dayIndex } from '../analytics/dates';
 import { useSync } from '../sync/useSync';
 import { SyncPanel } from '../ui/SyncPanel';
 import { InsightCard, LearningCard } from '../ui/InsightCards';
+import { EmptyState } from '../ui/EmptyState';
 import { faTime } from '../lib/jalali';
 import { tehranDateKey } from '../lib/time';
 
@@ -44,7 +45,7 @@ export function TodayScreen({ onOpenData, onOpenImport }: { onOpenData: () => vo
         onClose={sync.reset}
       />
 
-      {m && !m.hasData && <div class="card suggest" style="margin-top:18px;line-height:1.8;font-size:14px">{S.noData}</div>}
+      {m && !m.hasData && <EmptyState text={S.noData} action={S.noDataAction} onAction={onOpenImport} />}
 
       {m?.hasData && (
         <>

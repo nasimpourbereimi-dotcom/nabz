@@ -3,6 +3,7 @@ import { getDB } from '../db/schema';
 import { defaultWrappedMonth, loadWrapped } from '../db/queries';
 import { fa } from '../strings.fa';
 import { useLive } from '../ui/useLive';
+import { EmptyState } from '../ui/EmptyState';
 import { addJMonths, type JMonth } from '../lib/jalaliMonth';
 import { buildCards, INK, type StoryCard } from '../wrapped/cards';
 import { shareCard } from '../wrapped/canvas';
@@ -10,7 +11,7 @@ import { IconBack } from '../ui/icons';
 
 const W = fa.wrapped;
 
-export function WrappedScreen() {
+export function WrappedScreen({ onImport }: { onImport: () => void }) {
   const [month, setMonth] = useState<JMonth>(() => defaultWrappedMonth());
   const [i, setI] = useState(0);
   const [sharing, setSharing] = useState(false);
@@ -21,7 +22,7 @@ export function WrappedScreen() {
     return (
       <div class="screen fade-in">
         <h1 class="h1">{fa.tabs.wrapped}</h1>
-        <div class="card suggest" style="margin-top:18px;font-size:14px;line-height:1.8">{W.noData}</div>
+        <EmptyState text={W.noData} action={fa.today.noDataAction} onAction={onImport} />
       </div>
     );
   }

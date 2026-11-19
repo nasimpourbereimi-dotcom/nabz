@@ -5,6 +5,7 @@ import { fa, faDuration } from '../strings.fa';
 import { faDigits, faNumber } from '../lib/digits';
 import { faDate } from '../lib/jalali';
 import { useLive } from '../ui/useLive';
+import { EmptyState } from '../ui/EmptyState';
 import { TimeChart, type ChartSeries } from '../ui/TimeChart';
 import { dayIndex } from '../analytics/dates';
 import type { RangeKey } from '../analytics/trends';
@@ -17,7 +18,7 @@ const DAY_SEC = 86_400;
 /** day key → unix seconds at Tehran noon (uPlot x axis) */
 const xOf = (key: string) => dayIndex(key) * DAY_SEC + 12 * 3600 - 3.5 * 3600;
 
-export function TrendsScreen({ onOpenWorkout }: { onOpenWorkout: (id: string) => void }) {
+export function TrendsScreen({ onOpenWorkout, onImport }: { onOpenWorkout: (id: string) => void; onImport: () => void }) {
   const [range, setRange] = useState<RangeKey>('3m');
   const m = useLive(() => loadTrends(getDB(), range), [range]);
 
@@ -29,7 +30,7 @@ export function TrendsScreen({ onOpenWorkout }: { onOpenWorkout: (id: string) =>
           <button key={r} role="tab" aria-selected={r === range} onClick={() => setRange(r)}>{T.ranges[r]}</button>
         ))}
       </div>
-      {m && !m.hasData && <div class="card suggest" style="margin-top:18px;font-size:14px;line-height:1.8">{T.empty}</div>}
+      {m && !m.hasData && <EmptyState text={T.empty} action={fa.today.noDataAction} onAction={onImport} />}
       {m?.hasData && <Charts m={m} onOpenWorkout={onOpenWorkout} />}
     </div>
   );

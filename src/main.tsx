@@ -7,6 +7,8 @@ import '@fontsource/vazirmatn/900.css';
 import './styles/global.css';
 import { App } from './app';
 import { registerSW } from './ui/UpdateToast';
+import { loadAccent } from './ui/SettingsSections';
 
+loadAccent().catch(() => {});
 render(<App />, document.getElementById('app')!);
 registerSW();

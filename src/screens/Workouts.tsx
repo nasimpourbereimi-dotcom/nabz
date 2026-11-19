@@ -2,16 +2,17 @@ import { getDB } from '../db/schema';
 import { fa } from '../strings.fa';
 import { faDate } from '../lib/jalali';
 import { useLive } from '../ui/useLive';
+import { EmptyState } from '../ui/EmptyState';
 
 const S = fa.workouts;
 
-export function WorkoutsScreen({ onOpen }: { onOpen: (id: string) => void }) {
+export function WorkoutsScreen({ onOpen, onImport }: { onOpen: (id: string) => void; onImport: () => void }) {
   const list = useLive(() => getDB().workouts.orderBy('start').reverse().limit(60).toArray());
 
   return (
     <div class="screen fade-in">
       <h1 class="h1">{S.title}</h1>
-      {list && list.length === 0 && <p class="lead">{S.empty}</p>}
+      {list && list.length === 0 && <EmptyState text={S.empty} action={fa.today.noDataAction} onAction={onImport} />}
       <div class="stack" style="margin-top:18px">
         {list?.map((w) => (
           <button class="list-item" key={w.id} onClick={() => onOpen(w.id)}>

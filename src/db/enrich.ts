@@ -38,6 +38,7 @@ async function estimateFromDb(db: NabzDB): Promise<HrProfile> {
 
 export async function enrichWorkouts(db: NabzDB, onlyIds?: string[]): Promise<void> {
   const profile = await getProfile(db);
+  const k = ((await db.settings.get('trimpK'))?.value as number | undefined) ?? 1.92;
   const workouts = onlyIds ? (await db.workouts.bulkGet(onlyIds)).filter((w): w is Workout => !!w) : await db.workouts.toArray();
   const recoveries = (await db.samples.where('type').equals('hrRecovery1m').toArray()).sort((a, b) => a.start - b.start);
 
@@ -47,13 +48,13 @@ export async function enrichWorkouts(db: NabzDB, onlyIds?: string[]): Promise<vo
     const next: Workout = { ...w };
     if (samples.length >= 20) {
       next.zones = zoneSeconds(samples, w.start, w.end, profile.maxHR);
-      next.load = trimp(samples, w.start, w.end, profile);
+      next.load = trimp(samples, w.start, w.end, profile, k);
       if (next.hrAvg === undefined || next.hrMax === undefined) {
         const st = hrStats(samples, w.start, w.end);
         if (st) { next.hrAvg ??= st.avg; next.hrMax ??= st.max; next.hrMin ??= st.min; }
       }
     } else if (w.hrAvg !== undefined) {
-      next.load = trimpFromAverage(w.durationSec, w.hrAvg, profile);
+      next.load = trimpFromAverage(w.durationSec, w.hrAvg, profile, k);
     }
     const f = shapeFeatures(samples, w, profile, w.steps ?? 0);
     if (f) next.features = f;

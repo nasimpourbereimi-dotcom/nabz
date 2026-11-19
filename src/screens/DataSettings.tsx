@@ -3,6 +3,8 @@ import { getDB } from '../db/schema';
 import { fa } from '../strings.fa';
 import { backupFileName, BackupError, createBackup, restoreBackup, saveFile } from '../backup/backup';
 import { IconBack } from '../ui/icons';
+import { AccentSection, HrProfileSection } from '../ui/SettingsSections';
+import { GUIDE_URL } from './Onboarding';
 
 const S = fa.settings;
 
@@ -54,7 +56,17 @@ export function DataSettings({ onBack, onReimport }: { onBack: () => void; onRei
         <h1 class="h1">{S.title}</h1>
       </header>
 
-      <div class="card stack" style="margin-top:18px;gap:6px">
+      <HrProfileSection />
+      <AccentSection />
+
+      <div class="card stack" style="margin-top:12px;gap:8px">
+        <div style="font-weight:700">{fa.prefs.guide}</div>
+        <div class="muted small" style="line-height:1.8">{fa.prefs.guideLead}</div>
+        <a class="btn secondary" href={GUIDE_URL} target="_blank" rel="noopener" style="text-decoration:none">{fa.prefs.guide}</a>
+      </div>
+
+      <div class="muted" style="margin-top:20px;font-size:13px;font-weight:700;padding:0 4px">{fa.prefs.dataTitle}</div>
+      <div class="card stack" style="margin-top:8px;gap:6px">
         <div style="font-weight:700">{S.storage}</div>
         <div class="small" style={{ color: persisted ? 'var(--info)' : 'var(--lilac-text)' }}>
           {persisted === undefined ? '…' : persisted ? S.persisted : S.notPersisted}
