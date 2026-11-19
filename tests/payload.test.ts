@@ -80,6 +80,14 @@ describe('parsePayload', () => {
     expect(p.sleep[0].stage).toBe('core');
   });
 
+  it('accepts columns that arrive as newline-separated text', () => {
+    const p = parsePayload(JSON.stringify({
+      v: 1,
+      samples: { heartRate: { t: '2026-11-18T20:00:00Z\n2026-11-18T20:05:00Z\n', v: '۷۲\n۷۰' } },
+    }));
+    expect(p.heartRate.map((h) => h.v)).toEqual([72, 70]);
+  });
+
   it('accepts Persian digits outside strings', () => {
     const txt = '{"v":۱,"workouts":[],"samples":{"restingHR":[["2026-11-19T03:00:00Z",۵۸]]}}';
     expect(parsePayload(txt).restingHR[0].v).toBe(58);

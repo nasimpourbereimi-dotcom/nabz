@@ -62,7 +62,10 @@ export function sleepStageFrom(v: unknown): SleepStageName | undefined {
 function rows(list: unknown): unknown {
   if (!list || typeof list !== 'object' || Array.isArray(list)) return list;
   const o = list as Record<string, unknown>;
-  const cols = Object.entries(o).filter(([, v]) => Array.isArray(v)) as [string, unknown[]][];
+  // A list variable put into a Dictionary as Text arrives as one newline-separated string.
+  const asList = (v: unknown) =>
+    typeof v === 'string' && v.includes('\n') ? v.split('\n').map((x) => x.trim()).filter(Boolean) : v;
+  const cols = Object.entries(o).map(([k, v]) => [k, asList(v)] as const).filter(([, v]) => Array.isArray(v)) as [string, unknown[]][];
   if (!cols.length) return list;
   const n = Math.max(...cols.map(([, v]) => v.length));
   return Array.from({ length: n }, (_, i) => Object.fromEntries(cols.map(([k, v]) => [k, v[i]])));

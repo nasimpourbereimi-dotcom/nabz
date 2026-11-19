@@ -30,7 +30,7 @@ if slow, use "Get Details of Health Sample" on the whole list (returns lists) in
 App opens: `shortcuts://run-shortcut?name=<url-encoded نبض-سینک>&input=text&text=<lastSyncISO>`
 ```
 since = Shortcut Input (ISO date)
-workouts = read queue.json
+workouts = items of queue.json whose end > since   (older ones were already delivered)
 daily:
   restingHR   = Find Health Samples: Resting Heart Rate, start ≥ since
   hrv         = Find Health Samples: Heart Rate Variability, start ≥ since
@@ -38,7 +38,7 @@ daily:
   activeEnergy, exerciseMinutes, steps = Find Health Samples (≥ since)  # app aggregates per day
   heartRate   = Find Health Samples: Heart Rate, start ≥ since           # used for inferred workouts
 build dictionary → JSON → Copy to Clipboard
-clear queue.json
+save queue.json = those same recent items     (never cleared blindly: a missed paste loses nothing; the app dedups)
 (optional) show "برگرد به نبض" notification
 ```
 

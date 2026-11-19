@@ -84,7 +84,8 @@ Design (details in `docs/shortcuts.md`):
 2. **Shortcut "نبض-سینک"**, launched FROM the app's Sync button via
    `shortcuts://run-shortcut?name=...&input=text&text=<lastSyncISO>`:
    gathers queued workouts + HRV, resting HR, sleep, active energy, exercise minutes, steps, HR
-   since lastSync → builds JSON → copies to clipboard → clears queue.
+   since lastSync → builds JSON → copies to clipboard → keeps only queue items newer than lastSync
+   (lastSync advances only after a successful paste, so nothing is lost and the app dedups re-sends).
    User returns to the app → app reads clipboard (one "Paste" tap) → validates → imports.
 3. No nightly sync needed: syncing is on demand, any time, "everything since last sync".
 4. If last sync is too old (payload too large for the clipboard, roughly > a few weeks), the app suggests a fresh export.zip.
