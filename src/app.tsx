@@ -7,6 +7,7 @@ import { WorkoutsScreen } from './screens/Workouts';
 import { DataSettings } from './screens/DataSettings';
 import { SoonScreen } from './screens/Soon';
 import { WorkoutDetail } from './screens/WorkoutDetail';
+import { WrappedScreen } from './screens/Wrapped';
 import { IconToday, IconTrends, IconWorkouts, IconWrapped } from './ui/icons';
 import { UpdateToast } from './ui/UpdateToast';
 
@@ -66,7 +67,7 @@ export function App() {
       {tab === 'today' && <TodayScreen onOpenData={() => setRoute({ screen: 'data' })} onOpenImport={() => setRoute({ screen: 'import', firstRun: false })} />}
       {tab === 'workouts' && <WorkoutsScreen onOpen={(id) => setRoute({ screen: 'workout', id })} />}
       {tab === 'trends' && <SoonScreen title={fa.tabs.trends} />}
-      {tab === 'wrapped' && <SoonScreen title={fa.tabs.wrapped} />}
+      {tab === 'wrapped' && <WrappedScreen />}
       <nav class="tabbar" aria-label="tabs">
         {TABS.map(({ id, Icon }) => (
           <button key={id} class="tab" aria-current={tab === id ? 'page' : undefined} onClick={() => setRoute({ tab: id })}>

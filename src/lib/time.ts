@@ -53,3 +53,17 @@ export function tehranDateKey(ms: number): string {
   }
   return v;
 }
+
+const hourCache = new Map<number, number>();
+const hourFmt = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', hourCycle: 'h23' });
+/** Hour of day (0–23) in Asia/Tehran. Cached per 30 min. */
+export function tehranHour(ms: number): number {
+  const bucket = Math.floor(ms / (30 * MIN));
+  let h = hourCache.get(bucket);
+  if (h === undefined) {
+    h = Number(hourFmt.format(new Date(bucket * 30 * MIN))) % 24;
+    if (hourCache.size > 50_000) hourCache.clear();
+    hourCache.set(bucket, h);
+  }
+  return h;
+}

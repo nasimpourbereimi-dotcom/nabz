@@ -15,6 +15,8 @@ export function WorkoutDetail({ id, onBack }: { id: string; onBack: () => void }
   const w = m?.workout;
 
   const insights: { kind: 'info' | 'suggest'; text: string }[] = [];
+  // Wins first (CLAUDE.md §7).
+  for (const r of m?.records ?? []) insights.push({ kind: 'info', text: S.newRecord(fa.wrapped.record[r]) });
   if (m?.recovery) insights.push({ kind: 'info', text: S.recovery(m.recovery.drop, m.recovery.betterThanPct) });
   if (m?.efficiency) insights.push({ kind: 'info', text: S.efficiency(m.efficiency.sessions, m.efficiency.lowerBy) });
   if (m?.sleep) insights.push({ kind: 'suggest', text: S.sleepTip(m.sleep.longerPct, m.sleep.easierPct) });

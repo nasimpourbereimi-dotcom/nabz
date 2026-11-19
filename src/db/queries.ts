@@ -68,6 +68,7 @@ export interface WorkoutDetailModel {
   recovery?: ReturnType<typeof recoveryWin>;
   efficiency?: ReturnType<typeof efficiencyWin>;
   sleep?: ReturnType<typeof sleepEffect>;
+  records: RecordKind[];
 }
 
 export async function loadWorkoutDetail(db: NabzDB, id: string): Promise<WorkoutDetailModel | undefined> {
@@ -90,5 +91,54 @@ export async function loadWorkoutDetail(db: NabzDB, id: string): Promise<Workout
     recovery: recoveryWin(workout, all),
     efficiency: efficiencyWin(workout, all),
     sleep: sleepEffect(all, (w) => sleepByDay.get(workoutDay(w))),
+    records: recordsSetBy(workout, all),
   };
+}
+
+// ---------- Wrapped ----------
+import { monthStats, type MonthStats } from '../analytics/wrapped';
+import { goldenHour, recordsSetBy, type GoldenHour, type RecordKind } from '../analytics/records';
+import { addJMonths, jmonthName, jmonthOf, jmonthRange, type JMonth } from '../lib/jalaliMonth';
+import { tehranHour } from '../lib/time';
+
+export interface WrappedModel {
+  month: JMonth;
+  name: string;
+  prevName: string;
+  stats: MonthStats;
+  golden?: GoldenHour;
+  hasPrev: boolean;
+  hasNext: boolean;
+  hasData: boolean;
+}
+
+/** Default month: the current one, or the previous one during the first week (when it's still empty). */
+export function defaultWrappedMonth(now = Date.now()): JMonth {
+  const today = tehranDateKey(now);
+  const cur = jmonthOf(today);
+  return jmonthRange(cur)[0] > addDays(today, -7) ? addJMonths(cur, -1) : cur;
+}
+
+export async function loadWrapped(db: NabzDB, month: JMonth, now = Date.now()): Promise<WrappedModel> {
+  const [workouts, days] = await Promise.all([db.workouts.toArray(), db.dailyMetrics.toArray()]);
+  const range = jmonthRange(month);
+  const prev = addJMonths(month, -1);
+  const active = new Set<string>(workouts.map(workoutDay));
+  for (const d of days) if ((d.exerciseMin ?? 0) >= ACTIVE_EXERCISE_MIN) active.add(d.date);
+  const first = workouts.length ? workouts.reduce((a, w) => (w.start < a ? w.start : a), Infinity) : undefined;
+  const upToMonth = workouts.filter((w) => workoutDay(w) < range[1]);
+  return {
+    month,
+    name: jmonthName(month),
+    prevName: jmonthName(prev),
+    stats: monthStats({ workouts, dayOf: workoutDay, days, range, prevRange: jmonthRange(prev), activeDays: active }),
+    golden: goldenHour(upToMonth, tehranHour),
+    hasPrev: first !== undefined && tehranDateKey(first) < range[0],
+    hasNext: range[1] <= tehranDateKey(now),
+    hasData: workouts.length > 0,
+  };
+}
+
+export function workoutRecords(w: Workout, all: Workout[]): RecordKind[] {
+  return recordsSetBy(w, all);
 }
