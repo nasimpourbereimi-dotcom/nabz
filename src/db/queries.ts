@@ -1,0 +1,93 @@
+// Screen view-models: read from Dexie, then hand plain data to the pure analytics functions.
+import type { NabzDB } from './schema';
+import type { DailyMetrics, HrSample, Workout } from './types';
+import { tehranDateKey } from '../lib/time';
+import { addDays, daysBetween } from '../analytics/dates';
+import { loadSeries, sumByDay, weekVsUsual, type LoadPoint } from '../analytics/load';
+import { readiness, type Readiness } from '../analytics/readiness';
+import { ACTIVE_EXERCISE_MIN, streaks, weekSummary, type WeekSummary } from '../analytics/habits';
+import {
+  efficiencyWin, recoveryWin, sessionScore, sleepEffect, weeklySuggestion, type SessionScore, type WeeklySuggestion,
+} from '../analytics/insights';
+import { detectSets, type HrProfile, type SetPattern } from '../analytics/hr';
+import { readProfile } from './enrich';
+
+export const workoutDay = (w: Pick<Workout, 'start'>) => tehranDateKey(w.start);
+
+export interface TodayModel {
+  today: string;
+  /** day the dashboard is based on; earlier than today when there's no fresh data */
+  asOf: string;
+  stale: boolean;
+  readiness?: Readiness;
+  suggestion?: WeeklySuggestion;
+  load: LoadPoint[]; // last 42 days
+  week: WeekSummary;
+  streak: { current: number; best: number };
+  lastSync?: number;
+  hasData: boolean;
+}
+
+export async function loadToday(db: NabzDB, now = Date.now()): Promise<TodayModel> {
+  const today = tehranDateKey(now);
+  const [workouts, days, lastLog] = await Promise.all([
+    db.workouts.toArray(),
+    db.dailyMetrics.orderBy('date').toArray(),
+    db.syncLog.orderBy('at').last(),
+  ]);
+  const latest = days.at(-1)?.date;
+  const stale = latest !== undefined && daysBetween(latest, today) > 1;
+  const asOf = stale ? latest! : today;
+
+  const dailyLoad = sumByDay(workouts, workoutDay, (w) => w.load);
+  const series = loadSeries(dailyLoad, asOf);
+  const active = new Set<string>(workouts.map(workoutDay));
+  for (const d of days) if ((d.exerciseMin ?? 0) >= ACTIVE_EXERCISE_MIN) active.add(d.date);
+
+  return {
+    today,
+    asOf,
+    stale,
+    readiness: readiness(days, asOf),
+    suggestion: weeklySuggestion(weekVsUsual(dailyLoad, asOf)?.ratio),
+    load: series.filter((p) => p.date > addDays(asOf, -42)),
+    week: weekSummary(workouts.map((w) => ({ date: workoutDay(w), durationSec: w.durationSec })), asOf),
+    streak: streaks(active, asOf),
+    lastSync: lastLog?.at,
+    hasData: workouts.length + days.length > 0,
+  };
+}
+
+export interface WorkoutDetailModel {
+  workout: Workout;
+  samples: HrSample[];
+  profile: HrProfile;
+  score?: SessionScore;
+  sets: SetPattern;
+  recovery?: ReturnType<typeof recoveryWin>;
+  efficiency?: ReturnType<typeof efficiencyWin>;
+  sleep?: ReturnType<typeof sleepEffect>;
+}
+
+export async function loadWorkoutDetail(db: NabzDB, id: string): Promise<WorkoutDetailModel | undefined> {
+  const workout = await db.workouts.get(id);
+  if (!workout) return undefined;
+  const [samples, all, days, profile] = await Promise.all([
+    db.hrSamples.where('workoutId').equals(id).toArray().then((xs) => xs.sort((a, b) => a.t - b.t)),
+    db.workouts.toArray(),
+    db.dailyMetrics.toArray(),
+    readProfile(db),
+  ]);
+  const sleepByDay = new Map(days.map((d: DailyMetrics) => [d.date, d.sleepMin]));
+  const isStrength = workout.type === 'strength' || workout.type === 'hiit' || workout.type === 'core';
+  return {
+    workout,
+    samples,
+    profile,
+    score: sessionScore(workout, all),
+    sets: isStrength ? detectSets(samples, workout.start, workout.end) : { peaks: [], regular: false },
+    recovery: recoveryWin(workout, all),
+    efficiency: efficiencyWin(workout, all),
+    sleep: sleepEffect(all, (w) => sleepByDay.get(workoutDay(w))),
+  };
+}

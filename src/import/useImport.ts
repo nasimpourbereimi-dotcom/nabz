@@ -4,7 +4,7 @@ import type { FromWorker, ToWorker } from './protocol';
 
 export type ImportState =
   | { status: 'idle' }
-  | { status: 'running'; phase: 'scan' | 'parse' | 'save'; fraction: number; counts: ImportCounts; discoveries?: Discoveries }
+  | { status: 'running'; phase: 'scan' | 'parse' | 'save' | 'analyze'; fraction: number; counts: ImportCounts; discoveries?: Discoveries }
   | { status: 'done'; summary: ImportSummary; discoveries?: Discoveries }
   | { status: 'error'; code: string };
 

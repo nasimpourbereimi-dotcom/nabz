@@ -1,6 +1,9 @@
 // All UI copy lives here. Tone rules: CLAUDE.md §7 — calm, positive, actionable, never alarming.
 import { faDigits, faNumber } from './lib/digits';
 
+/** 190 → "۳:۱۰" */
+export const faDuration = (min: number) => faDigits(`${Math.floor(min / 60)}:${String(Math.round(min % 60)).padStart(2, '0')}`);
+
 export const fa = {
   appName: 'نبض',
   tabs: { today: 'امروز', workouts: 'تمرین‌ها', trends: 'روندها', wrapped: 'Wrapped' },
@@ -15,7 +18,7 @@ export const fa = {
       ['برگرد اینجا و فایل رو انتخاب کن', ''],
     ] as const,
     reading: 'در حال خواندن export.zip',
-    phase: { scan: 'دنبال تمرین‌ها می‌گردیم…', parse: 'ضربان و خواب و قدم‌ها رو می‌خونیم…', save: 'داریم مرتبش می‌کنیم…' },
+    phase: { scan: 'دنبال تمرین‌ها می‌گردیم…', parse: 'ضربان و خواب و قدم‌ها رو می‌خونیم…', save: 'داریم مرتبش می‌کنیم…', analyze: 'داریم تمرین‌هات رو تحلیل می‌کنیم…' },
     statWorkouts: 'تمرین',
     statYears: 'سال تاریخچه',
     statHr: 'ثبت ضربان',
@@ -46,12 +49,39 @@ export const fa = {
   today: {
     title: 'امروز',
     learning: 'هنوز داریم یادت می‌گیریم',
-    learningLead: 'داشبورد کامل (آمادگی، بار اخیر، فرم) توی قدم بعدی ساخته میشه. فعلاً اینا رو از تاریخچه‌ت داریم:',
-    statWorkouts: 'تمرین',
-    statDays: 'روز داده',
-    statHr: 'ثبت ضربان',
-    lastImport: (when: string) => `آخرین خواندن: ${when}`,
-    noData: 'هنوز داده‌ای نیاوردی. هر وقت آماده بودی، از تنظیمات export.zip رو انتخاب کن.',
+    learningLead: 'برای عدد آمادگی، حدود یه هفته HRV و ضربان استراحت لازم داریم. هر روز که بگذره دقیق‌تر میشه.',
+    lastData: (when: string) => `آخرین داده: ${when}`,
+    stale: (when: string) => `این‌ها بر اساس داده‌های ${when} هستن. با خواندن داده‌ی تازه، امروزت رو می‌سازیم.`,
+    noData: 'هنوز داده‌ای نیاوردی. هر وقت آماده بودی، از بخش داده‌ها export.zip رو انتخاب کن.',
+    readiness: 'آمادگی',
+    readinessAria: (n: number) => `آمادگی امروز ${faNumber(n)} از ۱۰۰`,
+    headline: {
+      high: 'آماده‌ای. امروز می‌تونی فشار بیاری.',
+      normal: 'روز خوبیه برای یه تمرین معمولی.',
+      easy: 'امروز یه جلسه‌ی سبک یا تحرک ملایم بهترین انتخابه.',
+    },
+    hrv: 'HRV',
+    rhr: 'ضربان استراحت',
+    sleep: 'خواب',
+    ms: 'ms',
+    suggestionTitle: 'پیشنهاد این هفته',
+    suggestion: {
+      heavy: (pct: number) => `هفته‌ی پرکاری بوده؛ ${faNumber(pct)}٪ بیشتر از معمولت. یه روز سبک، مثل پیاده‌روی، کمک می‌کنه بدنت این پیشرفت رو جذب کنه.`,
+      light: 'این هفته آروم‌تر از معمولت بوده. یه جلسه‌ی کوتاه ۲۰ دقیقه‌ای کافیه تا ریتمت برگرده.',
+      steady: 'ریتمت این هفته متعادله؛ همین‌طور ادامه بده. اگه حس خوبی داری، یکی از جلسه‌ها رو کمی بلندتر کن.',
+    },
+    loadTitle: 'آمادگی · بار اخیر · فرم',
+    loadRange: '۶ هفته‌ی اخیر',
+    loadAria: 'نمودار آمادگی، بار اخیر و فرم در ۶ هفته',
+    fitness: 'آمادگی',
+    recent: 'بار اخیر',
+    form: 'فرم',
+    thisWeek: 'این هفته',
+    weekValue: (n: number, min: number) => `${faNumber(n)} جلسه · ${faDuration(min)}`,
+    streakTitle: 'رکورد ثبات',
+    streakUnit: 'روز فعال در مسیر',
+    streakBest: (n: number) => `بهترین: ${faNumber(n)} روز`,
+    streakNote: 'یه روز استراحت مسیرت رو قطع نمی‌کنه.',
   },
 
   workouts: {
@@ -60,6 +90,31 @@ export const fa = {
     minutes: (m: number) => `${faNumber(Math.round(m))} دقیقه`,
     kcal: (k: number) => `${faNumber(Math.round(k))} کیلوکالری`,
     bpm: (b: number) => `${faNumber(Math.round(b))} ضربان متوسط`,
+    timeRange: (day: string, from: string, to: string) => `${day} · ${faDigits(from)} تا ${faDigits(to)}`,
+    score: { big: 'جلسه‌ی پربار', solid: 'جلسه‌ی متعادل', light: 'جلسه‌ی سبک' } as Record<string, string>,
+    statMin: 'دقیقه',
+    statKcal: 'کیلوکالری',
+    statAvg: 'ضربان متوسط',
+    statMax: 'بیشترین',
+    rhythm: 'ریتم تمرین',
+    rhythmAria: 'نمودار ضربان قلب با زون‌ها',
+    sets: (n: number, regular: boolean) =>
+      `هر قله یه ست: ${faNumber(n)} ست${regular ? ' با ریتم منظم، و استراحت‌هات هم یکنواخت بوده.' : '.'}`,
+    noHr: 'برای این جلسه ضربان لحظه‌ای ثبت نشده؛ فقط خلاصه‌ش رو داریم.',
+    zonesTitle: 'این جلسه چی ساخت',
+    zonesSub: 'زمان در هر زون',
+    zones: ['گرم‌کردن', 'استقامت پایه', 'هوازی', 'قدرت', 'اوج'],
+    zoneMin: (m: number) => `${faNumber(Math.round(m))}د`,
+    learnedTitle: 'چی فهمیدیم',
+    recovery: (drop: number, pct: number) => `ریکاوری ضربان یک دقیقه بعد از تمرین ${faNumber(drop)} ضربه بوده؛ بهتر از ${faNumber(pct)}٪ تمرین‌های قبلیت.`,
+    efficiency: (n: number, lower: number) => `نسبت به ${faNumber(n)} جلسه‌ی مشابه قبلی، با همون مدت، ضربان متوسطت ${faNumber(lower)} واحد پایین‌تر بوده.`,
+    sleepTip: (longer: number, easier: number) =>
+      `یه ترفند از داده‌های خودت: بعد از شب‌هایی که بیشتر از ۷ ساعت خوابیدی، تمرین‌هات ${
+        longer >= 5 && easier >= 2 ? 'راحت‌تر و بلندتر' : longer >= 5 ? `حدود ${faNumber(longer)}٪ بلندتر` : 'راحت‌تر'
+      } بودن.`,
+    learning: 'هنوز داریم یادت می‌گیریم؛ چند جلسه‌ی دیگه که بیاد، مقایسه‌ها اینجا میان.',
+    zoneFocus: (zone: string, pct: number) => `${faNumber(pct)}٪ این جلسه توی «${zone}» گذشت؛ اگه هدفت چیز دیگه‌ایه، جلسه‌ی بعد رو با همین معیار بسنج.`,
+    notFound: 'این تمرین پیدا نشد.',
     types: {
       strength: 'تمرین قدرتی', hiit: 'تمرین اینتروال', walk: 'پیاده‌روی', run: 'دویدن', cycle: 'دوچرخه',
       core: 'تمرین میان‌تنه', mobility: 'انعطاف و تحرک', other: 'تمرین',

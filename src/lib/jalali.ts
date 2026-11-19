@@ -14,3 +14,9 @@ export function faYear(ms: number): string {
 export function faDate(ms: number): string {
   return faDigits(format(ms, 'd MMMM yyyy', { locale: faIR }));
 }
+
+const timeFmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tehran', hour: '2-digit', minute: '2-digit', hour12: false });
+/** "18:42" in Tehran time, Persian digits. */
+export function faTime(ms: number): string {
+  return faDigits(timeFmt.format(ms));
+}

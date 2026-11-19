@@ -71,6 +71,15 @@ describe('importHealthExport', () => {
     expect(summary.malformed).toBeGreaterThanOrEqual(1);
     expect(summary.exportDate).toBeGreaterThan(0);
 
+    // enrichment ran: every workout has a load, zones and (synthetic) watch recovery
+    for (const w of workouts) {
+      const e = (await db.workouts.get(w.id))!;
+      expect(e.load).toBeGreaterThan(0);
+      expect(e.zones!.reduce((a, b) => a + b)).toBeGreaterThan(w.durationSec * 0.8);
+      expect(e.hrRecovery1m).toBeGreaterThan(0);
+    }
+    expect((await db.settings.get('dateOfBirth'))?.value).toBe('1992-03-14');
+    expect((await db.settings.get('hrProfile'))?.value).toMatchObject({ source: 'age' });
     expect(events).toContain('discoveries');
     expect(await db.syncLog.count()).toBe(1);
   });

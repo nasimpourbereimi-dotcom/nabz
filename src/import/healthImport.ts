@@ -16,6 +16,7 @@ import {
   ASLEEP_STAGES, distanceToKm, energyToKcal, HK, normalizeWorkoutType, sleepStage, type SleepStage,
 } from './mapping';
 import { planMerge } from './merge';
+import { enrichWorkouts } from '../db/enrich';
 
 export const RAW_HR_PAD_BEFORE = 2 * MIN;
 export const RAW_HR_PAD_AFTER = 5 * MIN; // keep the recovery tail
@@ -26,7 +27,7 @@ const BATCH = 5000;
 export type XmlSource = (onFraction: (f: number) => void) => AsyncIterable<string>;
 
 export type ImportEvent =
-  | { type: 'progress'; phase: 'scan' | 'parse' | 'save'; fraction: number; counts: ImportCounts }
+  | { type: 'progress'; phase: 'scan' | 'parse' | 'save' | 'analyze'; fraction: number; counts: ImportCounts }
   | { type: 'discoveries'; discoveries: Discoveries };
 
 export interface ImportCounts {
@@ -58,6 +59,7 @@ export interface ImportSummary extends ImportCounts {
 export async function scanWorkouts(source: XmlSource, onFraction: (f: number) => void, malformed: { n: number }) {
   const workouts: Workout[] = [];
   let exportDate: number | undefined;
+  let dateOfBirth: string | undefined;
   let cur: Workout | null = null;
 
   const scanner: TagScanner = new TagScanner((tag: Tag) => {
@@ -77,6 +79,10 @@ export async function scanWorkouts(source: XmlSource, onFraction: (f: number) =>
     // Header (ExportDate) is read tag by tag; from the first ExportDate/Record on, fast-forward between workouts.
     if (tag.name === 'ExportDate' && !tag.isEnd) {
       exportDate = parseHealthDate(attr(tag.raw, 'value') ?? '');
+      return;
+    }
+    if (tag.name === 'Me' && !tag.isEnd) {
+      dateOfBirth = attr(tag.raw, 'HKCharacteristicTypeIdentifierDateOfBirth') || undefined;
       if (!cur) scanner.seek = '<Workout ';
       return;
     }
@@ -92,7 +98,7 @@ export async function scanWorkouts(source: XmlSource, onFraction: (f: number) =>
   scanner.end();
   malformed.n += scanner.malformed;
   workouts.sort((a, b) => a.start - b.start);
-  return { workouts, exportDate };
+  return { workouts, exportDate, dateOfBirth };
 }
 
 function workoutFromAttrs(a: Record<string, string>): Workout | null {
@@ -271,12 +277,13 @@ export async function importHealthExport(
   const SCAN_W = 0.25; // pass 1 share of the progress bar
 
   // Pass 1
-  const { workouts, exportDate } = await scanWorkouts(
+  const { workouts, exportDate, dateOfBirth } = await scanWorkouts(
     source,
     (f) => emit({ type: 'progress', phase: 'scan', fraction: f * SCAN_W, counts }),
     malformed,
   );
   counts.workouts = workouts.length;
+  if (dateOfBirth) await db.settings.put({ key: 'dateOfBirth', value: dateOfBirth });
   emit({ type: 'discoveries', discoveries: summarizeWorkouts(workouts) });
 
   // Merge workouts into DB right away (user sees them even if pass 2 is interrupted).
@@ -418,6 +425,8 @@ export async function importHealthExport(
     counts: { workouts: counts.workouts, hrRecords: counts.hrRecords, samples: counts.samples, days: counts.days, malformed: counts.malformed },
     exportDate,
   });
-  emit({ type: 'progress', phase: 'save', fraction: 1, counts });
+  emit({ type: 'progress', phase: 'analyze', fraction: 0.97, counts });
+  await enrichWorkouts(db);
+  emit({ type: 'progress', phase: 'analyze', fraction: 1, counts });
   return summary;
 }
