@@ -9,6 +9,7 @@ import { LoadChart, ReadinessRing, WeekBars } from '../ui/charts';
 import { dayIndex } from '../analytics/dates';
 import { useSync } from '../sync/useSync';
 import { SyncPanel } from '../ui/SyncPanel';
+import { InsightCard, LearningCard } from '../ui/InsightCards';
 import { faTime } from '../lib/jalali';
 import { tehranDateKey } from '../lib/time';
 
@@ -68,6 +69,8 @@ export function TodayScreen({ onOpenData, onOpenImport }: { onOpenData: () => vo
             </div>
           )}
 
+          {m.insight && <InsightCard c={m.insight.candidate} logged={m.insight.logged} />}
+
           {m.suggestion && (
             <div class="card suggest row" style="margin-top:12px;align-items:flex-start;border-radius:18px;padding:14px 16px">
               <IconSpark color="var(--lilac)" style="flex-shrink:0;margin-top:2px" />
@@ -108,6 +111,8 @@ export function TodayScreen({ onOpenData, onOpenImport }: { onOpenData: () => vo
               <div class="muted" style="font-size:11px">{S.streakBest(m.streak.best)}</div>
             </div>
           </div>
+
+          <LearningCard items={m.learning} />
         </>
       )}
     </div>

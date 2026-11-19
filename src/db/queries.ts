@@ -11,6 +11,8 @@ import {
 } from '../analytics/insights';
 import { detectSets, type HrProfile, type SetPattern } from '../analytics/hr';
 import { readProfile } from './enrich';
+import { candidates, pick, type Candidate } from '../analytics/insightEngine';
+import { learningProgress, type LearnItem } from '../analytics/learning';
 
 export const workoutDay = (w: Pick<Workout, 'start'>) => tehranDateKey(w.start);
 
@@ -26,6 +28,8 @@ export interface TodayModel {
   streak: { current: number; best: number };
   lastSync?: number;
   hasData: boolean;
+  insight?: { candidate: Candidate; logged: boolean };
+  learning: LearnItem[];
 }
 
 export async function loadToday(db: NabzDB, now = Date.now()): Promise<TodayModel> {
@@ -45,15 +49,38 @@ export async function loadToday(db: NabzDB, now = Date.now()): Promise<TodayMode
   const active = new Set<string>(workouts.map(workoutDay));
   for (const d of days) if ((d.exerciseMin ?? 0) >= ACTIVE_EXERCISE_MIN) active.add(d.date);
 
+  // Insight of the day: stable through the day, never repeated within a week.
+  const sleepByDay = new Map(days.map((d) => [d.date, d.sleepMin]));
+  const sleepBefore = (w: Workout) => sleepByDay.get(workoutDay(w));
+  const weekRatio = weekVsUsual(dailyLoad, asOf)?.ratio;
+  const streak = streaks(active, asOf);
+  const cands = candidates({
+    today: asOf, workouts, dayOf: workoutDay,
+    golden: goldenHour(workouts, tehranHour),
+    sleep: sleepEffect(workouts, sleepBefore),
+    streak,
+    hrvChange: change(dailySeries(days, 'hrvSDNN', addDays(asOf, -59), asOf)),
+    rhrChange: change(dailySeries(days, 'restingHR', addDays(asOf, -59), asOf)),
+    weekRatio,
+  });
+  const log = await db.insightLog.orderBy('shownAt').toArray();
+  const shown = new Map<string, string>();
+  for (const e of log) shown.set(e.insightId, tehranDateKey(e.shownAt));
+  const todays = log.filter((e) => tehranDateKey(e.shownAt) === today).at(-1);
+  const kept = todays && cands.find((c) => c.id === todays.insightId);
+  const chosen = kept ?? pick(cands, shown, today);
+
   return {
     today,
     asOf,
     stale,
+    insight: chosen ? { candidate: chosen, logged: !!kept } : undefined,
+    learning: learningProgress({ workouts, days, today: asOf, hourOf: tehranHour, sleepBefore }),
     readiness: readiness(days, asOf),
-    suggestion: weeklySuggestion(weekVsUsual(dailyLoad, asOf)?.ratio),
+    suggestion: weeklySuggestion(weekRatio),
     load: series.filter((p) => p.date > addDays(asOf, -42)),
     week: weekSummary(workouts.map((w) => ({ date: workoutDay(w), durationSec: w.durationSec })), asOf),
-    streak: streaks(active, asOf),
+    streak,
     lastSync: (lastSync?.value as number | undefined) ?? lastExport?.exportDate,
     hasData: workouts.length + days.length > 0,
   };

@@ -255,6 +255,33 @@ export const fa = {
     few: 'برای این نمودار هنوز داده‌ی کافی نداریم.',
   },
 
+  insight: {
+    title: 'یافته‌ی امروز',
+    golden: (from: number, to: number) => `ساعت ${faNumber(from)} تا ${faNumber(to)} ساعت طلایی‌ته: با ضربان کمتر کار بیشتری می‌کنی. جلسه‌ی سنگین بعدی رو بذار برای همین موقع.`,
+    sleep: (longer: number, easier: number) =>
+      `بعد از شب‌هایی که بیشتر از ۷ ساعت خوابیدی، تمرین‌هات ${longer >= 5 ? `حدود ${faNumber(longer)}٪ بلندتر` : ''}${longer >= 5 && easier >= 2 ? ' و ' : ''}${easier >= 2 ? 'راحت‌تر' : ''} بودن. امشب یه کم زودتر بخواب.`,
+    record: (what: string) => `این هفته رکورد زدی: ${what}ت تا امروز. همین حس رو با خودت ببر جلسه‌ی بعد.`,
+    streakBest: (d: number) => `${faNumber(d)} روز در مسیری؛ بلندترین مسیرت تا حالا. فردا یه جلسه‌ی کوتاه هم کافیه تا ادامه پیدا کنه.`,
+    hrvUp: (d: number) => `HRV ـت توی دو ماه اخیر ${faNumber(d, 1)} میلی‌ثانیه بالا رفته. ریتم خواب و تمرینت داره جواب میده؛ نگهش دار.`,
+    rhrDown: (d: number) => `ضربان استراحتت توی دو ماه اخیر ${faNumber(Math.abs(d), 1)} واحد پایین اومده. همین ریتم رو ادامه بده.`,
+    weekMore: (pct: number) => `این هفته ${faNumber(pct)}٪ بیشتر از معمولت تمرین کردی، بدون زیاده‌روی. همین اندازه خوبه.`,
+    consistency: (pw: number) => `توی چهار هفته‌ی اخیر به‌طور میانگین ${faNumber(pw, 1)} جلسه در هفته داشتی. این ثباته که پیشرفت می‌سازه.`,
+    recoveryUp: (d: number) => `ریکاوری ضربانت بعد از تمرین، توی ۱۰ جلسه‌ی اخیر ${faNumber(d)} ضربه بهتر شده. بدنت داره سریع‌تر برمی‌گرده.`,
+  },
+
+  learning: {
+    title: 'دارم یادت می‌گیرم',
+    lead: 'هر چی داده بیشتر بشه، این‌ها باز میشن:',
+    items: {
+      readiness: (h: number, n: number) => `عدد آمادگی: ${faNumber(h)} از ${faNumber(n)} روز HRV و ضربان استراحت`,
+      compare: (h: number, n: number, t: string) => `مقایسه‌ی جلسه‌ها: ${faNumber(h)} از ${faNumber(n)} ${t}`,
+      types: (h: number, n: number) => `حدس نوع تمرین از روی ضربان: ${faNumber(h)} از ${faNumber(n)} جلسه‌ی برچسب‌دار`,
+      golden: (h: number, n: number) => `ساعت طلایی: ${faNumber(h)} از ${faNumber(n)} جلسه در ساعت‌های مختلف روز`,
+      sleep: (h: number, n: number) => `اثر خواب روی تمرین: ${faNumber(h)} از ${faNumber(n)} جلسه بعد از شب‌های کم و زیاد`,
+    },
+    done: (n: number) => `${faNumber(n)} مورد رو یاد گرفتیم`,
+  },
+
   soon: { title: 'به‌زودی', lead: 'این بخش توی قدم‌های بعدی ساخته میشه.' },
 
   settings: {
