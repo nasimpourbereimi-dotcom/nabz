@@ -393,7 +393,7 @@ export async function importHealthExport(
     const now = Date.now();
     if (now - lastEmit > 150) {
       lastEmit = now;
-      counts.years = years.size; counts.malformed = malformed.n + scanner.malformed;
+      counts.years = years.size; counts.days = days.size; counts.malformed = malformed.n + scanner.malformed;
       emit({ type: 'progress', phase: 'parse', fraction: SCAN_W + f * (0.95 - SCAN_W), counts });
     }
   })) {

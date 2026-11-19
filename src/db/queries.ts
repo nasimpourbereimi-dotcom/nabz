@@ -34,11 +34,10 @@ export interface TodayModel {
 
 export async function loadToday(db: NabzDB, now = Date.now()): Promise<TodayModel> {
   const today = tehranDateKey(now);
-  const [workouts, days, lastSync, lastExport] = await Promise.all([
+  const [workouts, days, lastSync] = await Promise.all([
     db.workouts.toArray(),
     db.dailyMetrics.orderBy('date').toArray(),
     db.settings.get('lastSync'),
-    db.syncLog.where('kind').equals('export').last(),
   ]);
   const latest = days.at(-1)?.date;
   const stale = latest !== undefined && daysBetween(latest, today) > 1;
@@ -81,7 +80,8 @@ export async function loadToday(db: NabzDB, now = Date.now()): Promise<TodayMode
     load: series.filter((p) => p.date > addDays(asOf, -42)),
     week: weekSummary(workouts.map((w) => ({ date: workoutDay(w), durationSec: w.durationSec })), asOf),
     streak,
-    lastSync: (lastSync?.value as number | undefined) ?? lastExport?.exportDate,
+    // only a real Shortcuts sync counts; an export's date is not a "sync"
+    lastSync: lastSync?.value as number | undefined,
     hasData: workouts.length + days.length > 0,
   };
 }

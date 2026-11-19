@@ -4,6 +4,13 @@ import { faDigits, faNumber } from './lib/digits';
 /** 190 → "۳:۱۰" */
 export const faDuration = (min: number) => faDigits(`${Math.floor(min / 60)}:${String(Math.round(min % 60)).padStart(2, '0')}`);
 
+/** 776 → "۱۲ ساعت و ۵۶ دقیقه" (for running text, where "۱۲:۵۶ ساعت" would read as a decimal) */
+export const faHoursMinutes = (min: number) => {
+  const h = Math.floor(min / 60), m = Math.round(min % 60);
+  if (!h) return `${faNumber(m)} دقیقه`;
+  return m ? `${faNumber(h)} ساعت و ${faNumber(m)} دقیقه` : `${faNumber(h)} ساعت`;
+};
+
 export const fa = {
   appName: 'نبض',
   tabs: { today: 'امروز', workouts: 'تمرین‌ها', trends: 'روندها', wrapped: 'Wrapped' },
@@ -18,10 +25,10 @@ export const fa = {
       ['برگرد اینجا و فایل رو انتخاب کن', ''],
     ] as const,
     reading: 'در حال خواندن export.zip',
-    phase: { scan: 'دنبال تمرین‌ها می‌گردیم…', parse: 'ضربان و خواب و قدم‌ها رو می‌خونیم…', save: 'داریم مرتبش می‌کنیم…', analyze: 'داریم تمرین‌هات رو تحلیل می‌کنیم…' },
+    phase: { scan: 'دنبال تمرین‌ها می‌گردیم…', parse: 'ضربان و خواب و قدم‌ها رو می‌خونیم…', save: 'داریم داده‌ها رو مرتب می‌کنیم…', analyze: 'داریم تمرین‌هات رو تحلیل می‌کنیم…' },
     statWorkouts: 'تمرین',
-    statYears: 'سال تاریخچه',
-    statHr: 'ثبت ضربان',
+    statDays: 'روز تاریخچه',
+    statHr: 'اندازه‌گیری ضربان',
     privacy: 'همه‌چیز فقط روی همین گوشی می‌مونه. هیچ داده‌ای جایی فرستاده نمیشه.',
     pick: 'انتخاب فایل export.zip',
     skip: 'فعلاً رد شو',
@@ -29,16 +36,16 @@ export const fa = {
     discoveriesTitle: 'تا اینجا پیدا کردیم',
     disc: {
       workouts: (n: number) => `${faNumber(n)} جلسه تمرین`,
-      since: (year: string) => `اولین تمرینت: ${year}`,
+      since: (year: string) => `اولین تمرینت: سال ${year}`,
       hours: (h: number) => `${faNumber(Math.round(h))} ساعت در حرکت`,
       longest: (m: number) => `طولانی‌ترین جلسه: ${faNumber(Math.round(m))} دقیقه`,
     },
     doneTitle: 'تاریخچه‌ت رسید',
-    doneLead: (w: number, days: number) => `${faNumber(w)} تمرین و ${faNumber(days)} روز داده خونده شد. از این به بعد هر چی بیشتر بمونی، دقیق‌تر یادت می‌گیریم.`,
+    doneLead: (w: number, days: number) => `${faNumber(w)} تمرین و ${faNumber(days)} روز داده خونده شد. هر چی داده‌ی بیشتری جمع بشه، دقیق‌تر می‌شناسیمت.`,
     go: 'بریم',
     errors: {
       'not-zip': 'این فایل zip نیست. همون export.zip که Health ساخته رو انتخاب کن.',
-      'no-export-xml': 'توی این zip فایل export.xml پیدا نشد. مطمئنی خروجی Health ـه؟',
+      'no-export-xml': 'توی این zip فایل export.xml پیدا نشد. مطمئنی این فایل خروجی Health هست؟',
       'read-failed': 'خوندن فایل وسط کار قطع شد. یه بار دیگه امتحان کن؛ چیزی خراب نشده.',
       quota: 'فضای گوشی برای ذخیره کم اومد. کمی فضا خالی کن و دوباره امتحان کن.',
       unknown: 'یه جای کار گیر کرد. دوباره امتحان کن؛ داده‌های قبلی سالم‌ان.',
@@ -50,7 +57,6 @@ export const fa = {
     title: 'امروز',
     learning: 'هنوز داریم یادت می‌گیریم',
     learningLead: 'برای عدد آمادگی، حدود یه هفته HRV و ضربان استراحت لازم داریم. هر روز که بگذره دقیق‌تر میشه.',
-    lastData: (when: string) => `آخرین داده: ${when}`,
     stale: (when: string) => `این‌ها بر اساس داده‌های ${when} هستن. با خواندن داده‌ی تازه، امروزت رو می‌سازیم.`,
     noData: 'هنوز داده‌ای نیاوردی. با یه export.zip از Health، تاریخچه‌ت اینجا جون می‌گیره.',
     noDataAction: 'خواندن export.zip',
@@ -79,10 +85,10 @@ export const fa = {
     form: 'فرم',
     thisWeek: 'این هفته',
     weekValue: (n: number, min: number) => `${faNumber(n)} جلسه · ${faDuration(min)}`,
-    streakTitle: 'رکورد ثبات',
-    streakUnit: 'روز فعال در مسیر',
+    streakTitle: 'ثبات',
+    streakUnit: 'روز فعال پیوسته',
     streakBest: (n: number) => `بهترین: ${faNumber(n)} روز`,
-    streakNote: 'یه روز استراحت مسیرت رو قطع نمی‌کنه.',
+    streakNote: 'یه روز استراحت این پیوستگی رو قطع نمی‌کنه.',
   },
 
   workouts: {
@@ -90,9 +96,10 @@ export const fa = {
     empty: 'هنوز تمرینی نیست. بعد از اولین import اینجا پر میشه.',
     minutes: (m: number) => `${faNumber(Math.round(m))} دقیقه`,
     kcal: (k: number) => `${faNumber(Math.round(k))} کیلوکالری`,
-    bpm: (b: number) => `${faNumber(Math.round(b))} ضربان متوسط`,
+    bpm: (b: number) => `ضربان متوسط ${faNumber(Math.round(b))}`,
     timeRange: (day: string, from: string, to: string) => `${day} · ${faDigits(from)} تا ${faDigits(to)}`,
     score: { big: 'جلسه‌ی پربار', solid: 'جلسه‌ی متعادل', light: 'جلسه‌ی سبک' } as Record<string, string>,
+    scoreBadge: (tier: string, score: number) => `${tier} · ${faNumber(score)} از ۱۰۰`,
     statMin: 'دقیقه',
     statKcal: 'کیلوکالری',
     statAvg: 'ضربان متوسط',
@@ -107,18 +114,25 @@ export const fa = {
     zones: ['گرم‌کردن', 'استقامت پایه', 'هوازی', 'قدرت', 'اوج'],
     zoneMin: (m: number) => `${faNumber(Math.round(m))}د`,
     learnedTitle: 'چی فهمیدیم',
-    recovery: (drop: number, pct: number) => `ریکاوری ضربان یک دقیقه بعد از تمرین ${faNumber(drop)} ضربه بوده؛ بهتر از ${faNumber(pct)}٪ تمرین‌های قبلیت.`,
-    efficiency: (n: number, lower: number) => `نسبت به ${faNumber(n)} جلسه‌ی مشابه قبلی، با همون مدت، ضربان متوسطت ${faNumber(lower)} واحد پایین‌تر بوده.`,
+    recovery: (drop: number, pct: number) => `یک دقیقه بعد از تمرین، ضربانت ${faNumber(drop)} ضربه پایین اومد؛ بهتر از ${faNumber(pct)}٪ تمرین‌های قبلیت.`,
+    efficiency: (n: number, lower: number) => `نسبت به ${faNumber(n)} جلسه‌ی مشابه قبلی، با همون مدت، ضربان متوسطت ${faNumber(lower)} ضربه پایین‌تر بوده؛ یعنی همون کار رو راحت‌تر انجام دادی.`,
     sleepTip: (longer: number, easier: number) =>
       `یه ترفند از داده‌های خودت: بعد از شب‌هایی که بیشتر از ۷ ساعت خوابیدی، تمرین‌هات ${
         longer >= 5 && easier >= 2 ? 'راحت‌تر و بلندتر' : longer >= 5 ? `حدود ${faNumber(longer)}٪ بلندتر` : 'راحت‌تر'
       } بودن.`,
     learning: 'هنوز داریم یادت می‌گیریم؛ چند جلسه‌ی دیگه که بیاد، مقایسه‌ها اینجا میان.',
-    zoneFocus: (zone: string, pct: number) => `${faNumber(pct)}٪ این جلسه توی «${zone}» گذشت؛ اگه هدفت چیز دیگه‌ایه، جلسه‌ی بعد رو با همین معیار بسنج.`,
-    newRecord: (what: string) => `رکورد تازه: ${what}ت تا امروز.`,
+    zoneFocus: (zone: string, pct: number, idx: number) =>
+      `${faNumber(pct)}٪ این جلسه توی زون «${zone}» گذشت. ${
+        idx <= 1
+          ? 'اگه جلسه‌ی بعد رو پرفشارتر می‌خوای، استراحت بین ست‌ها رو کمی کوتاه‌تر کن.'
+          : idx === 2
+            ? 'تعادل خوبی بین فشار و استقامت بوده؛ برای ساختن پایه‌ی هوازی عالیه.'
+            : 'جلسه‌ی پرفشاری بوده؛ یه جلسه‌ی سبک‌تر بعدش به بدنت فرصت می‌ده این فشار رو جذب کنه.'
+      }`,
+    newRecord: (what: string) => `رکورد تازه: ${what} تا امروز.`,
     notFound: 'این تمرین پیدا نشد.',
     types: {
-      strength: 'تمرین قدرتی', hiit: 'تمرین اینتروال', walk: 'پیاده‌روی', run: 'دویدن', cycle: 'دوچرخه',
+      strength: 'تمرین قدرتی', hiit: 'تمرین اینتروال', walk: 'پیاده‌روی', run: 'دویدن', cycle: 'دوچرخه‌سواری',
       core: 'تمرین میان‌تنه', mobility: 'انعطاف و تحرک', other: 'تمرین',
     } as Record<string, string>,
   },
@@ -127,7 +141,7 @@ export const fa = {
     button: 'سینک',
     lastSync: (when: string) => `سینک: ${when}`,
     waitingTitle: 'داده‌ها رو آوردی؟',
-    waitingLead: 'Shortcut «نبض-سینک» داده‌های تازه رو کپی می‌کنه. برگشتی، اینجا رو بزن و «Paste» رو تأیید کن.',
+    waitingLead: 'Shortcut «نبض-سینک» داده‌های تازه رو کپی می‌کنه. وقتی برگشتی، دکمه‌ی پایین رو بزن و توی پیام iOS «Paste» رو تأیید کن.',
     paste: 'چسباندن داده‌ها',
     manual: 'دستی بچسبون',
     manualPlaceholder: 'متن کپی‌شده رو اینجا بچسبون',
@@ -151,7 +165,6 @@ export const fa = {
       clipboard: 'اجازه‌ی خواندن کلیپ‌بورد داده نشد. «دستی بچسبون» رو بزن.',
       apply: 'موقع ذخیره یه چیزی گیر کرد. داده‌های قبلی سالم‌ان؛ دوباره امتحان کن.',
     } as Record<string, string>,
-    retry: 'دوباره',
   },
 
   confirm: {
@@ -159,7 +172,6 @@ export const fa = {
     yes: 'آره',
     no: 'نه، چیز دیگه‌ای بود',
     pick: 'چه تمرینی بود؟',
-    thanks: 'ثبت شد؛ دفعه‌ی بعد بهتر حدس می‌زنیم.',
     inferred: 'این جلسه رو از روی ضربانت پیدا کردیم.',
   },
 
@@ -173,7 +185,7 @@ export const fa = {
   wrapped: {
     brand: 'نبض · Wrapped',
     title: (month: string) => `${month}ِ\nتو`,
-    coverLead: (sessions: number, hours: string) => `یه ماه، ${faNumber(sessions)} جلسه، ${hours} ساعت در حرکت. بیا ببینیم چی ساختی.`,
+    coverLead: (sessions: number, time: string) => `یه ماه، ${faNumber(sessions)} جلسه تمرین، ${time} در حرکت. بیا ببینیم چی ساختی.`,
     coverEmpty: 'این ماه هنوز تمرینی ثبت نشده. هر جلسه‌ای که بیاد، داستان این ماه رو می‌سازه.',
     sessions: 'جلسه تمرین',
     moreThan: (n: number, prev: string) => `${faNumber(n)} تا بیشتر از ${prev}`,
@@ -183,7 +195,7 @@ export const fa = {
     goldenValue: (from: number, to: number) => `${faNumber(from)} تا ${faNumber(to)}`,
     goldenText: 'تو این ساعت‌ها بدنت بهترین حالشو داره: با ضربان کمتر، کار بیشتری کردی. جلسه‌های سنگین رو بذار برای همین موقع.',
     topType: 'بیشتر از همه',
-    topTypeText: 'این ماه بیشتر از هر چیزی سراغ این رفتی.',
+    topTypeText: 'این ماه بیشتر از هر تمرین دیگه‌ای سراغش رفتی.',
     recordsTitle: 'بهترین‌های\nاین ماه',
     record: {
       longest: 'طولانی‌ترین جلسه',
@@ -198,22 +210,22 @@ export const fa = {
     monthBestText: 'هر ماه یه فرصت تازه‌ست برای جابه‌جا کردن این عددها.',
     minutes: (m: number) => `${faNumber(Math.round(m))} دقیقه`,
     kcalValue: (k: number) => `${faNumber(Math.round(k))} کیلوکالری`,
-    bpmDrop: (b: number) => `${faNumber(Math.round(b))} ضربه در یک دقیقه`,
-    loadValue: (l: number) => `${faNumber(Math.round(l))} واحد بار`,
+    bpmDrop: (b: number) => `${faNumber(Math.round(b))} ضربه افت در یک دقیقه`,
+    loadValue: (l: number) => `${faNumber(Math.round(l))} واحد بار تمرین`,
     consistencyTitle: 'ثباتِ\nتو',
     activeDays: (n: number, of: number) => `${faNumber(n)} از ${faNumber(of)}`,
     activeDaysLabel: 'روز فعال',
-    bestStreak: 'بلندترین مسیر',
+    bestStreak: 'بلندترین دوره‌ی پیوسته',
     days: (n: number) => `${faNumber(n)} روز`,
     perWeek: 'جلسه در هفته',
-    consistencyBox: 'مسیرت',
+    consistencyBox: 'ریتمت',
     consistencyText: (n: number) => n >= 3 ? 'ریتمت جا افتاده؛ همین ثباته که پیشرفت می‌سازه.' : 'هر جلسه یه آجره. ماه بعد با یه جلسه‌ی کوتاه اضافه در هفته، ریتمت جا میفته.',
     bodyTitle: 'بدنِ\nتو',
     rhr: 'ضربان استراحت',
     hrv: 'HRV',
     sleep: 'خواب شبانه',
-    lowerThan: (d: number) => `${faNumber(d)} واحد پایین‌تر از ماه قبل`,
-    higherThan: (d: number) => `${faNumber(d)} واحد بالاتر از ماه قبل`,
+    lowerThan: (d: number) => `${faNumber(d)} ضربه پایین‌تر از ماه قبل`,
+    higherThan: (d: number) => `${faNumber(d)} میلی‌ثانیه بالاتر از ماه قبل`,
     nextMonth: 'برای ماه بعد',
     nextSleep: 'شب‌هایی که بیشتر از ۷ ساعت می‌خوابی رو بیشتر کن؛ تمرین‌ها راحت‌تر و بلندتر میشن.',
     nextGrow: 'همین ریتم رو نگه دار و یکی از جلسه‌ها رو هر هفته کمی بلندتر کن.',
@@ -236,19 +248,19 @@ export const fa = {
     volumeUnit: 'دقیقه',
     volumeCaption: (avg: number, sessions: number) => `به‌طور میانگین ${faNumber(Math.round(avg))} دقیقه در هفته، ${faNumber(sessions)} جلسه در این بازه.`,
     rhr: 'ضربان استراحت',
-    rhrDown: (d: number) => `ضربان استراحتت ${faNumber(Math.abs(d), 1)} واحد پایین‌تر از اول این بازه‌ست؛ همین مسیر رو ادامه بده.`,
+    rhrDown: (d: number) => `ضربان استراحتت ${faNumber(Math.abs(d), 1)} ضربه پایین‌تر از اول این بازه‌ست؛ همین ریتم رو ادامه بده.`,
     hrv: 'HRV',
-    hrvUp: (d: number) => `HRV ـت ${faNumber(d, 1)} میلی‌ثانیه بالاتر از اول این بازه‌ست؛ خواب و استراحتت داره جواب میده.`,
+    hrvUp: (d: number) => `HRV تو ${faNumber(d, 1)} میلی‌ثانیه بالاتر از اول این بازه‌ست؛ خواب و استراحتت داره جواب میده.`,
     steady: 'تقریباً ثابت مونده؛ ثبات خودش یعنی بدنت با ریتمت کنار اومده.',
     avg7: 'میانگین ۷ روزه',
     daily: 'روزانه',
     sleep: 'خواب',
-    sleepHours: 'ساعت',
     recovery: 'ریکاوری ضربان بعد از تمرین',
-    recoveryCaption: 'هر چی بیشتر، یعنی ضربانت بعد از تمرین سریع‌تر آروم میشه.',
+    recoveryCaption: 'افت ضربان در دقیقه‌ی اول بعد از تمرین. عدد بیشتر یعنی ضربانت سریع‌تر آروم میشه.',
     vo2: 'VO2max',
     heat: 'نقشه‌ی فعالیت',
     heatAria: 'نقشه‌ی روزهای فعال',
+    heatMinutes: (date: string, m: number) => `${date}: ${faNumber(m)} دقیقه تمرین`,
     less: 'کمتر',
     more: 'بیشتر',
     records: 'رکوردهای همیشگی',
@@ -261,17 +273,17 @@ export const fa = {
     golden: (from: number, to: number) => `ساعت ${faNumber(from)} تا ${faNumber(to)} ساعت طلایی‌ته: با ضربان کمتر کار بیشتری می‌کنی. جلسه‌ی سنگین بعدی رو بذار برای همین موقع.`,
     sleep: (longer: number, easier: number) =>
       `بعد از شب‌هایی که بیشتر از ۷ ساعت خوابیدی، تمرین‌هات ${longer >= 5 ? `حدود ${faNumber(longer)}٪ بلندتر` : ''}${longer >= 5 && easier >= 2 ? ' و ' : ''}${easier >= 2 ? 'راحت‌تر' : ''} بودن. امشب یه کم زودتر بخواب.`,
-    record: (what: string) => `این هفته رکورد زدی: ${what}ت تا امروز. همین حس رو با خودت ببر جلسه‌ی بعد.`,
-    streakBest: (d: number) => `${faNumber(d)} روز در مسیری؛ بلندترین مسیرت تا حالا. فردا یه جلسه‌ی کوتاه هم کافیه تا ادامه پیدا کنه.`,
-    hrvUp: (d: number) => `HRV ـت توی دو ماه اخیر ${faNumber(d, 1)} میلی‌ثانیه بالا رفته. ریتم خواب و تمرینت داره جواب میده؛ نگهش دار.`,
-    rhrDown: (d: number) => `ضربان استراحتت توی دو ماه اخیر ${faNumber(Math.abs(d), 1)} واحد پایین اومده. همین ریتم رو ادامه بده.`,
+    record: (what: string) => `این هفته رکورد زدی: ${what} تا امروز. همین حس رو با خودت ببر جلسه‌ی بعد.`,
+    streakBest: (d: number) => `${faNumber(d)} روز فعال پیوسته؛ بلندترین دوره‌ی ثباتت تا حالا. فردا یه جلسه‌ی کوتاه هم کافیه تا ادامه پیدا کنه.`,
+    hrvUp: (d: number) => `HRV تو توی دو ماه اخیر ${faNumber(d, 1)} میلی‌ثانیه بالا رفته. ریتم خواب و تمرینت داره جواب میده؛ نگهش دار.`,
+    rhrDown: (d: number) => `ضربان استراحتت توی دو ماه اخیر ${faNumber(Math.abs(d), 1)} ضربه پایین اومده. همین ریتم رو ادامه بده.`,
     weekMore: (pct: number) => `این هفته ${faNumber(pct)}٪ بیشتر از معمولت تمرین کردی، بدون زیاده‌روی. همین اندازه خوبه.`,
     consistency: (pw: number) => `توی چهار هفته‌ی اخیر به‌طور میانگین ${faNumber(pw, 1)} جلسه در هفته داشتی. این ثباته که پیشرفت می‌سازه.`,
     recoveryUp: (d: number) => `ریکاوری ضربانت بعد از تمرین، توی ۱۰ جلسه‌ی اخیر ${faNumber(d)} ضربه بهتر شده. بدنت داره سریع‌تر برمی‌گرده.`,
   },
 
   learning: {
-    title: 'دارم یادت می‌گیرم',
+    title: 'داریم یادت می‌گیریم',
     lead: 'هر چی داده بیشتر بشه، این‌ها باز میشن:',
     items: {
       readiness: (h: number, n: number) => `عدد آمادگی: ${faNumber(h)} از ${faNumber(n)} روز HRV و ضربان استراحت`,
@@ -296,7 +308,7 @@ export const fa = {
     installTitle: 'اول نبض رو نصب کن',
     installLead: 'برای اینکه داده‌هات توی خود اپ بمونه، نبض باید از Home Screen باز بشه.',
     installSteps: [
-      'پایین Safari دکمه‌ی Share رو بزن',
+      'توی Safari دکمه‌ی Share رو بزن (اگه پیداش نمی‌کنی، توی منوی «…» هست)',
       '«Add to Home Screen» رو انتخاب کن',
       'نبض رو از Home Screen باز کن و از همون‌جا ادامه بده',
     ],
@@ -304,7 +316,7 @@ export const fa = {
     installAnyway: 'فعلاً توی همین مرورگر ادامه بده',
     step2: 'قدم ۲ از ۲',
     syncTitle: 'از این به بعد، با یه دکمه',
-    syncLead: 'دو Shortcut کوچیک، داده‌های تازه رو هر وقت خواستی می‌آرن؛ بدون export دوباره.',
+    syncLead: 'دو Shortcut کوچیک، داده‌های تازه رو هر وقت خواستی میارن؛ بدون export دوباره.',
     syncSteps: [
       'Automation «نبض-تمرین» شروع و پایان هر تمرین رو ثبت می‌کنه',
       'Shortcut «نبض-سینک» با دکمه‌ی سینک توی صفحه‌ی امروز اجرا میشه',
@@ -327,10 +339,11 @@ export const fa = {
     save: 'ذخیره و محاسبه‌ی دوباره',
     auto: 'برگرد به حالت خودکار',
     kTitle: 'ضریب بار تمرین (TRIMP)',
-    kLead: 'فرمول بار تمرین دو ضریب رایج داره. پیش‌فرض ۱٫۹۲ ـه؛ اگه با ۱٫۶۷ عددها برات واقعی‌تره، عوضش کن.',
+    kLead: 'فرمول بار تمرین (Banister) دو ضریب استاندارد داره: ۱٫۹۲ برای مردان و ۱٫۶۷ برای زنان. هر کدوم به بدنت نزدیک‌تره رو انتخاب کن.',
     recomputing: 'داریم زون‌ها و بار همه‌ی تمرین‌ها رو دوباره حساب می‌کنیم…',
     recomputed: 'همه‌ی تمرین‌ها با تنظیم تازه حساب شدن.',
     accent: 'رنگ اصلی',
+    accentNames: { '#FF7A1A': 'نارنجی', '#4CC3FF': 'آبی', '#C6F432': 'لیمویی', '#B9A6FF': 'بنفش' } as Record<string, string>,
     dataTitle: 'داده‌ها',
     guide: 'راهنمای ساخت Shortcutها',
     guideLead: 'برای سینک روزانه، دو Shortcut لازمه. راهنمای قدم‌به‌قدمش اینجاست.',
@@ -361,4 +374,5 @@ export const fa = {
 
   update: { ready: 'نسخه‌ی تازه‌ی نبض آماده‌ست', reload: 'به‌روزرسانی' },
   back: 'برگشت',
+  mainNav: 'منوی اصلی',
 };

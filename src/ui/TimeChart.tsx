@@ -20,7 +20,9 @@ export interface ChartSeries {
 
 const GRID = '#1F2226';
 const AXIS = '#9BA1A6';
-const shortDate = (sec: number) => faDigits(format(sec * 1000, 'd MMMM', { locale: faIR }));
+/** Persian digits with a real minus sign that stays on the left inside RTL text (LRM + U+2212). */
+const signed = (v: number) => { const r = Math.round(v); return r < 0 ? `‎−${faDigits(-r)}` : faDigits(r); };
+const shortDate =(sec: number) => faDigits(format(sec * 1000, 'd MMMM', { locale: faIR }));
 
 export function TimeChart({ x, series, height = 160, aria }: { x: number[]; series: ChartSeries[]; height?: number; aria: string }) {
   const box = useRef<HTMLDivElement>(null);
@@ -30,7 +32,7 @@ export function TimeChart({ x, series, height = 160, aria }: { x: number[]; seri
   useEffect(() => {
     const el = box.current;
     if (!el || x.length < 2) return;
-    const fmtVal = (s: ChartSeries, v: number | null | undefined) => (v == null ? '—' : s.fmt ? s.fmt(v) : faDigits(Math.round(v)));
+    const fmtVal = (s: ChartSeries, v: number | null | undefined) => (v == null ? '—' : s.fmt ? s.fmt(v) : signed(v));
     const opts: uPlot.Options = {
       width: el.clientWidth,
       height,
@@ -44,7 +46,7 @@ export function TimeChart({ x, series, height = 160, aria }: { x: number[]; seri
         },
         {
           stroke: AXIS, grid: { stroke: GRID, width: 1 }, ticks: { show: false }, font: '11px Vazirmatn', size: 40,
-          values: (_u, splits) => splits.map((v) => faDigits(Math.round(v))),
+          values: (_u, splits) => splits.map(signed),
         },
       ],
       series: [

@@ -110,6 +110,7 @@ export function TodayScreen({ onOpenData, onOpenImport }: { onOpenData: () => vo
               <div style="font-size:38px;font-weight:900;line-height:1.1;color:var(--accent)">{faNumber(m.streak.current)}</div>
               <div style="font-size:12px;color:#C5C9CC">{S.streakUnit}</div>
               <div class="muted" style="font-size:11px">{S.streakBest(m.streak.best)}</div>
+              <div class="muted" style="font-size:10px;line-height:1.6">{S.streakNote}</div>
             </div>
           </div>
 

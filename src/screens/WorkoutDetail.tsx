@@ -24,7 +24,7 @@ export function WorkoutDetail({ id, onBack }: { id: string; onBack: () => void }
   if (!insights.length && w?.zones && m?.score) {
     const total = w.zones.reduce((a, b) => a + b, 0);
     const top = w.zones.indexOf(Math.max(...w.zones));
-    if (total > 0) insights.push({ kind: 'info', text: S.zoneFocus(S.zones[top], Math.round((w.zones[top] / total) * 100)) });
+    if (total > 0) insights.push({ kind: 'info', text: S.zoneFocus(S.zones[top], Math.round((w.zones[top] / total) * 100), top) });
   }
 
   return (
@@ -38,7 +38,7 @@ export function WorkoutDetail({ id, onBack }: { id: string; onBack: () => void }
           </div>
         )}
         {m?.score && (
-          <div class="badge" style="margin-right:auto">{S.score[m.score.tier]} · {faNumber(m.score.score)}</div>
+          <div class="badge" style="margin-right:auto">{S.scoreBadge(S.score[m.score.tier], m.score.score)}</div>
         )}
       </header>
 

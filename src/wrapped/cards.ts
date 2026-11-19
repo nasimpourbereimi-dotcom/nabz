@@ -1,6 +1,6 @@
 // One data model for each story card, rendered both as DOM (screen) and on canvas (shareable image),
 // so the shared picture always matches what the owner saw.
-import { fa, faDuration } from '../strings.fa';
+import { fa, faDuration, faHoursMinutes } from '../strings.fa';
 import { faNumber } from '../lib/digits';
 import type { MonthStats } from '../analytics/wrapped';
 import type { GoldenHour, RecordKind } from '../analytics/records';
@@ -31,7 +31,7 @@ export function buildCards(opts: { month: string; prevMonth: string; s: MonthSta
   cards.push({
     bg: CARD_COLORS[0],
     title: W.title(month),
-    lead: s.sessions ? W.coverLead(s.sessions, hours) : W.coverEmpty,
+    lead: s.sessions ? W.coverLead(s.sessions, faHoursMinutes(s.totalMin)) : W.coverEmpty,
     stats: [],
   });
   if (!s.sessions) return cards;

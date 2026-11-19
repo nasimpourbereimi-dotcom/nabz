@@ -85,7 +85,7 @@ export function AccentSection() {
       <div style="font-weight:700">{S.accent}</div>
       <div class="row" style="gap:12px">
         {ACCENTS.map((c) => (
-          <button key={c} aria-label={c} aria-pressed={current === c}
+          <button key={c} aria-label={S.accentNames[c]} aria-pressed={current === c}
             style={{ width: '44px', height: '44px', borderRadius: '50%', background: c, border: current === c ? '3px solid var(--text)' : '3px solid transparent' }}
             onClick={async () => { await getDB().settings.put({ key: 'accent', value: c }); applyAccent(c); }} />
         ))}

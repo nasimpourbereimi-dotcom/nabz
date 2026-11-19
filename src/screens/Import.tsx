@@ -62,7 +62,7 @@ export function ImportScreen({ onDone, onSkip, step = true }: { onDone: () => vo
           </div>
           <div class="stats" style="margin-top:4px">
             <Stat value={counts?.workouts} label={S.statWorkouts} />
-            <Stat value={counts?.years} label={S.statYears} />
+            <Stat value={counts?.days} label={S.statDays} />
             <Stat value={counts?.hrRecords} label={S.statHr} />
           </div>
         </div>

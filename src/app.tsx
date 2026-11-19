@@ -77,7 +77,7 @@ export function App() {
       {tab === 'workouts' && <WorkoutsScreen onOpen={(id) => setRoute({ screen: 'workout', id })} onImport={() => setRoute({ screen: 'import', firstRun: false })} />}
       {tab === 'trends' && <TrendsScreen onOpenWorkout={(id) => setRoute({ screen: 'workout', id, back: 'trends' })} onImport={() => setRoute({ screen: 'import', firstRun: false })} />}
       {tab === 'wrapped' && <WrappedScreen onImport={() => setRoute({ screen: 'import', firstRun: false })} />}
-      <nav class="tabbar" aria-label="tabs">
+      <nav class="tabbar" aria-label={fa.mainNav}>
         {TABS.map(({ id, Icon }) => (
           <button key={id} class="tab" aria-current={tab === id ? 'page' : undefined} onClick={() => setRoute({ tab: id })}>
             <Icon size={22} />

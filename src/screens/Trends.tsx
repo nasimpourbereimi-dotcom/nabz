@@ -2,7 +2,7 @@ import { useMemo, useState } from 'preact/hooks';
 import { getDB } from '../db/schema';
 import { loadTrends, type TrendsModel } from '../db/queries';
 import { fa, faDuration } from '../strings.fa';
-import { faDigits, faNumber } from '../lib/digits';
+import { faNumber } from '../lib/digits';
 import { faDate } from '../lib/jalali';
 import { useLive } from '../ui/useLive';
 import { EmptyState } from '../ui/EmptyState';
@@ -143,7 +143,7 @@ function Heatmap({ heat }: { heat: TrendsModel['heat'] }) {
         <svg width={w} height={h} role="img" aria-label={T.heatAria} style="display:block;margin-left:auto">
           {heat.cells.filter((c) => c.inRange).map((c) => (
             <rect key={c.date} x={c.col * (cell + gap)} y={c.row * (cell + gap)} width={cell} height={cell} rx="2" fill={HEAT[c.level]}>
-              <title>{`${faDate(Date.UTC(+c.date.slice(0, 4), +c.date.slice(5, 7) - 1, +c.date.slice(8, 10), 12))}: ${faDigits(c.minutes)}′`}</title>
+              <title>{T.heatMinutes(faDate(Date.UTC(+c.date.slice(0, 4), +c.date.slice(5, 7) - 1, +c.date.slice(8, 10), 12)), c.minutes)}</title>
             </rect>
           ))}
         </svg>
