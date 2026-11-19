@@ -142,3 +142,40 @@ export async function loadWrapped(db: NabzDB, month: JMonth, now = Date.now()): 
 export function workoutRecords(w: Workout, all: Workout[]): RecordKind[] {
   return recordsSetBy(w, all);
 }
+
+// ---------- Trends ----------
+import { change, dailySeries, heatmap, rangeStart, rolling, weekly, type RangeKey } from '../analytics/trends';
+import { bestOf } from '../analytics/records';
+
+export async function loadTrends(db: NabzDB, range: RangeKey, now = Date.now()) {
+  const [workouts, days] = await Promise.all([db.workouts.orderBy('start').toArray(), db.dailyMetrics.orderBy('date').toArray()]);
+  const today = tehranDateKey(now);
+  const lastData = days.at(-1)?.date;
+  const to = lastData && lastData < today ? lastData : today;
+  const firstDay = [days[0]?.date, workouts[0] ? workoutDay(workouts[0]) : undefined].filter(Boolean).sort()[0] as string | undefined;
+  const from = rangeStart(range, to, firstDay);
+  const inRange = workouts.filter((w) => { const d = workoutDay(w); return d >= from && d <= to; });
+
+  const load = loadSeries(sumByDay(workouts, workoutDay, (w) => w.load), to).filter((p) => p.date >= from);
+  const rhr = dailySeries(days, 'restingHR', from, to);
+  const hrv = dailySeries(days, 'hrvSDNN', from, to);
+  const sleep = dailySeries(days, 'sleepMin', from, to);
+  const vo2 = dailySeries(days, 'vo2max', from, to);
+  const minutesByDay = sumByDay(workouts, workoutDay, (w) => w.durationSec / 60);
+  const heatFrom = from < addDays(to, -364) ? addDays(to, -364) : from;
+
+  return {
+    from, to, hasData: workouts.length + days.length > 0,
+    load,
+    weeklyMinutes: weekly(inRange, workoutDay, (w) => w.durationSec / 60, from, to),
+    rhr: { series: rhr, avg7: rolling(rhr, 7), change: change(rhr) },
+    hrv: { series: hrv, avg7: rolling(hrv, 7), change: change(hrv) },
+    sleep: { series: sleep, avg7: rolling(sleep, 7) },
+    vo2: vo2.some((p) => p.v !== undefined) ? { series: vo2, change: change(vo2) } : undefined,
+    recovery: inRange.filter((w) => w.hrRecovery1m !== undefined).map((w) => ({ t: w.start, v: w.hrRecovery1m! })),
+    heat: heatmap(minutesByDay, heatFrom, to),
+    records: bestOf(workouts),
+    sessions: inRange.length,
+  };
+}
+export type TrendsModel = Awaited<ReturnType<typeof loadTrends>>;

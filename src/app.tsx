@@ -5,14 +5,14 @@ import { ImportScreen } from './screens/Import';
 import { TodayScreen } from './screens/Today';
 import { WorkoutsScreen } from './screens/Workouts';
 import { DataSettings } from './screens/DataSettings';
-import { SoonScreen } from './screens/Soon';
 import { WorkoutDetail } from './screens/WorkoutDetail';
 import { WrappedScreen } from './screens/Wrapped';
+import { TrendsScreen } from './screens/Trends';
 import { IconToday, IconTrends, IconWorkouts, IconWrapped } from './ui/icons';
 import { UpdateToast } from './ui/UpdateToast';
 
 type Tab = 'today' | 'workouts' | 'trends' | 'wrapped';
-type Route = { tab: Tab } | { screen: 'data' } | { screen: 'import'; firstRun: boolean } | { screen: 'workout'; id: string };
+type Route = { tab: Tab } | { screen: 'data' } | { screen: 'import'; firstRun: boolean } | { screen: 'workout'; id: string; back?: Tab };
 
 const TABS: { id: Tab; Icon: typeof IconToday }[] = [
   { id: 'today', Icon: IconToday },
@@ -42,7 +42,7 @@ export function App() {
 
   if ('screen' in route) {
     if (route.screen === 'workout') {
-      return <WorkoutDetail id={route.id} onBack={() => setRoute({ tab: 'workouts' })} />;
+      return <WorkoutDetail id={route.id} onBack={() => setRoute({ tab: route.back ?? 'workouts' })} />;
     }
     if (route.screen === 'import') {
       return (
@@ -66,7 +66,7 @@ export function App() {
     <>
       {tab === 'today' && <TodayScreen onOpenData={() => setRoute({ screen: 'data' })} onOpenImport={() => setRoute({ screen: 'import', firstRun: false })} />}
       {tab === 'workouts' && <WorkoutsScreen onOpen={(id) => setRoute({ screen: 'workout', id })} />}
-      {tab === 'trends' && <SoonScreen title={fa.tabs.trends} />}
+      {tab === 'trends' && <TrendsScreen onOpenWorkout={(id) => setRoute({ screen: 'workout', id, back: 'trends' })} />}
       {tab === 'wrapped' && <WrappedScreen />}
       <nav class="tabbar" aria-label="tabs">
         {TABS.map(({ id, Icon }) => (

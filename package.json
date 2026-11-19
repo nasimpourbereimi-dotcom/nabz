@@ -15,7 +15,8 @@
     "@zip.js/zip.js": "^2.25.0",
     "date-fns-jalali": "^4.4.0-0",
     "dexie": "^4.4.7",
-    "preact": "^11.2.0"
+    "preact": "^11.2.0",
+    "uplot": "^1.6.32"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",
