@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { getDB } from '../db/schema';
 import { applyPayload, type SyncSummary } from './apply';
 import { parsePayload, PayloadError } from './payload';
+import { logError } from '../lib/errorLog';
 
 export const SHORTCUT_NAME = 'نبض-سینک';
 /** Beyond this, a clipboard payload gets too big; suggest a fresh export.zip instead. */
@@ -56,7 +57,7 @@ export function useSync() {
       waiting.current = false;
       setState({ status: 'done', summary });
     } catch (e) {
-      console.error(e);
+      logError('sync', e);
       setState({ status: 'error', code: e instanceof PayloadError ? e.code : 'apply' });
     }
   }, []);

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { NabzDB, TABLES } from '../src/db/schema';
 import { BackupError, createBackup, restoreBackup } from '../src/backup/backup';
 
+const NL = String.fromCharCode(10);
+
 async function seed(db: NabzDB) {
   await db.workouts.bulkPut([
     { id: 'x1', start: 1, end: 2, durationSec: 1, type: 'strength', typeSource: 'health', source: 'export', rpe: 6, notes: 'یادداشت' },
@@ -39,6 +41,33 @@ describe('backup / restore', () => {
     expect(restored.syncLog.length).toBe(original.syncLog.length + 1);
     delete restored.syncLog; delete original.syncLog;
     expect(restored).toEqual(original);
+  });
+
+  it('rolls back to the previous data when writing fails half-way', async () => {
+    const db = new NabzDB('bk-d');
+    await seed(db);
+    const before = await dump(db);
+    // Structurally valid, but the hrSamples row has no primary key → bulkPut fails after the wipe.
+    const lines = [
+      JSON.stringify({ nabz: 'backup', v: 1, schema: 2, exportedAt: 1 }),
+      JSON.stringify({ t: 'workouts', r: [{ id: 'new', start: 1, end: 2, durationSec: 1, type: 'walk', typeSource: 'health', source: 'export' }] }),
+      JSON.stringify({ t: 'hrSamples', r: [{ bpm: 100 }] }),
+    ].join(NL) + NL;
+    const gz = await new Response(new Blob([lines]).stream().pipeThrough(new CompressionStream('gzip'))).blob();
+    await expect(restoreBackup(db, gz)).rejects.toMatchObject({ code: 'rolled-back' });
+    const after = await dump(db);
+    expect(after).toEqual(before);
+  });
+
+  it('validates the whole file before touching anything', async () => {
+    const db = new NabzDB('bk-e');
+    await seed(db);
+    const good = await createBackup(db);
+    const text = await new Response(good.stream().pipeThrough(new DecompressionStream('gzip'))).text();
+    const broken = text + '{"t":"workouts","r":[' + NL; // corrupt tail
+    const gz = await new Response(new Blob([broken]).stream().pipeThrough(new CompressionStream('gzip'))).blob();
+    await expect(restoreBackup(db, gz)).rejects.toMatchObject({ code: 'corrupt' });
+    expect(await db.workouts.count()).toBe(2);
   });
 
   it('refuses a non-backup file without touching data', async () => {

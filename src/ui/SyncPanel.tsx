@@ -13,6 +13,7 @@ export function SyncPanel(props: {
   onForce: () => void;
   onExport: () => void;
   onClose: () => void;
+  onGuide: () => void;
 }) {
   const { state } = props;
   const [manual, setManual] = useState(false);
@@ -70,6 +71,10 @@ export function SyncPanel(props: {
           ) : (
             <button class="btn ghost" onClick={() => setManual(true)}>{S.manual}</button>
           )}
+          <div class="row" style="gap:8px">
+            <button class="btn ghost" style="flex:1" onClick={props.onGuide}>{S.noShortcut}</button>
+            <button class="btn ghost" style="flex:1" onClick={props.onClose}>{S.dismiss}</button>
+          </div>
         </>
       )}
     </div>

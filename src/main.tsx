@@ -8,7 +8,10 @@ import './styles/global.css';
 import { App } from './app';
 import { registerSW } from './ui/UpdateToast';
 import { loadAccent } from './ui/SettingsSections';
+import { installGlobalHandlers } from './lib/errorLog';
+import { ErrorBoundary } from './ui/ErrorBoundary';
 
 loadAccent().catch(() => {});
-render(<App />, document.getElementById('app')!);
+installGlobalHandlers();
+render(<ErrorBoundary><App /></ErrorBoundary>, document.getElementById('app')!);
 registerSW();

@@ -28,6 +28,8 @@ export interface TodayModel {
   streak: { current: number; best: number };
   lastSync?: number;
   hasData: boolean;
+  /** all data lives only on this phone: nudge a backup every few weeks */
+  backupDue: boolean;
   insight?: { candidate: Candidate; logged: boolean };
   learning: LearnItem[];
 }
@@ -38,6 +40,10 @@ export async function loadToday(db: NabzDB, now = Date.now()): Promise<TodayMode
     db.workouts.toArray(),
     db.dailyMetrics.orderBy('date').toArray(),
     db.settings.get('lastSync'),
+  ]);
+  const [lastBackup, firstExport] = await Promise.all([
+    db.settings.get('lastBackup'),
+    db.syncLog.orderBy('at').first(),
   ]);
   const latest = days.at(-1)?.date;
   const stale = latest !== undefined && daysBetween(latest, today) > 1;
@@ -83,6 +89,7 @@ export async function loadToday(db: NabzDB, now = Date.now()): Promise<TodayMode
     // only a real Shortcuts sync counts; an export's date is not a "sync"
     lastSync: lastSync?.value as number | undefined,
     hasData: workouts.length + days.length > 0,
+    backupDue: backupDue(lastBackup?.value as number | undefined, firstExport?.at, now),
   };
 }
 
@@ -206,3 +213,12 @@ export async function loadTrends(db: NabzDB, range: RangeKey, now = Date.now()) 
   };
 }
 export type TrendsModel = Awaited<ReturnType<typeof loadTrends>>;
+
+export const BACKUP_EVERY_DAYS = 30;
+/** Due when the last backup is older than 30 days, or there was never one and data is older than 14 days. */
+export function backupDue(lastBackup: number | undefined, firstData: number | undefined, now: number): boolean {
+  if (firstData === undefined) return false;
+  const DAY = 86_400_000;
+  if (lastBackup === undefined) return now - firstData > 14 * DAY;
+  return now - lastBackup > BACKUP_EVERY_DAYS * DAY;
+}

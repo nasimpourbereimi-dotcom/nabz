@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import type { Discoveries, ImportCounts, ImportSummary } from './healthImport';
 import type { FromWorker, ToWorker } from './protocol';
+import { logError } from '../lib/errorLog';
 
 export type ImportState =
   | { status: 'idle' }
@@ -47,14 +48,14 @@ export function useImport() {
           release();
           break;
         case 'error':
-          console.error(m.message);
+          logError('import', m.message);
           setState({ status: 'error', code: m.code });
           release();
           break;
       }
     };
     w.onerror = (e) => {
-      console.error(e);
+      logError('import-worker', e);
       setState({ status: 'error', code: 'unknown' });
       release();
     };

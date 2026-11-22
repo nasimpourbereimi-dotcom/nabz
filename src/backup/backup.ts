@@ -11,7 +11,7 @@ const PAGE = 2000;
 export const BACKUP_VERSION = 1;
 
 export class BackupError extends Error {
-  constructor(public code: 'not-backup' | 'newer-version' | 'corrupt', message?: string) {
+  constructor(public code: 'not-backup' | 'newer-version' | 'corrupt' | 'rolled-back' | 'rollback-failed', message?: string) {
     super(message ?? code);
   }
 }
@@ -50,39 +50,20 @@ export function backupFileName(now = new Date()): string {
   return `nabz-backup-${d}.json.gz`;
 }
 
-export async function restoreBackup(db: NabzDB, file: Blob, onProgress?: (rows: number) => void): Promise<Record<string, number>> {
-  const reader = file
-    .stream()
-    .pipeThrough(new DecompressionStream('gzip'))
-    .pipeThrough(new TextDecoderStream())
-    .getReader();
+type Line = { nabz?: string; v?: number; t?: TableName; r?: unknown[] };
 
+/** Streams a backup file line by line (gunzip → text → NDJSON). Any read/parse failure → BackupError. */
+async function eachLine(file: Blob, onLine: (obj: Line, isHeader: boolean) => Promise<void> | void): Promise<void> {
+  const reader = file.stream().pipeThrough(new DecompressionStream('gzip')).pipeThrough(new TextDecoderStream()).getReader();
   let buf = '';
   let header = false;
-  const counts: Record<string, number> = {};
-  let total = 0;
-
   const handle = async (line: string) => {
     if (!line.trim()) return;
-    let obj: { nabz?: string; v?: number; t?: TableName; r?: unknown[] };
-    try { obj = JSON.parse(line); } catch { throw new BackupError('corrupt'); }
-    if (!header) {
-      if (obj.nabz !== 'backup') throw new BackupError('not-backup');
-      if ((obj.v ?? 0) > BACKUP_VERSION) throw new BackupError('newer-version');
-      header = true;
-      // Only wipe once we know the file is a valid backup.
-      await db.transaction('rw', TABLES.map((t) => db.table(t)), async () => {
-        for (const t of TABLES) await db.table(t).clear();
-      });
-      return;
-    }
-    if (!obj.t || !TABLES.includes(obj.t) || !Array.isArray(obj.r)) throw new BackupError('corrupt');
-    await db.table(obj.t).bulkPut(obj.r);
-    counts[obj.t] = (counts[obj.t] ?? 0) + obj.r.length;
-    total += obj.r.length;
-    onProgress?.(total);
+    let obj: Line;
+    try { obj = JSON.parse(line); } catch { throw new BackupError(header ? 'corrupt' : 'not-backup'); }
+    await onLine(obj, !header);
+    header = true;
   };
-
   try {
     for (;;) {
       const { value, done } = await reader.read();
@@ -95,12 +76,65 @@ export async function restoreBackup(db: NabzDB, file: Blob, onProgress?: (rows: 
         await handle(line);
       }
     }
+    if (buf) await handle(buf);
   } catch (e) {
     if (e instanceof BackupError) throw e;
     throw new BackupError(header ? 'corrupt' : 'not-backup', String(e));
   }
-  if (buf) await handle(buf);
   if (!header) throw new BackupError('not-backup');
+}
+
+/** Reads the whole file without writing anything; throws on the first problem. */
+export async function validateBackup(file: Blob): Promise<number> {
+  let rows = 0;
+  await eachLine(file, (obj, isHeader) => {
+    if (isHeader) {
+      if (obj.nabz !== 'backup') throw new BackupError('not-backup');
+      if ((obj.v ?? 0) > BACKUP_VERSION) throw new BackupError('newer-version');
+      return;
+    }
+    if (!obj.t || !TABLES.includes(obj.t) || !Array.isArray(obj.r)) throw new BackupError('corrupt');
+    rows += obj.r.length;
+  });
+  return rows;
+}
+
+async function writeBackup(db: NabzDB, file: Blob, onProgress?: (rows: number) => void): Promise<Record<string, number>> {
+  const counts: Record<string, number> = {};
+  let total = 0;
+  await db.transaction('rw', TABLES.map((t) => db.table(t)), async () => {
+    for (const t of TABLES) await db.table(t).clear();
+  });
+  await eachLine(file, async (obj, isHeader) => {
+    if (isHeader) return;
+    await db.table(obj.t!).bulkPut(obj.r!);
+    counts[obj.t!] = (counts[obj.t!] ?? 0) + obj.r!.length;
+    total += obj.r!.length;
+    onProgress?.(total);
+  });
+  return counts;
+}
+
+/**
+ * Replaces all data with a backup, safely:
+ * 1. the whole file is validated first (nothing is touched if it is broken),
+ * 2. a copy of the current data is kept in memory,
+ * 3. if writing fails half-way, that copy is written back and 'rolled-back' is thrown.
+ */
+export async function restoreBackup(db: NabzDB, file: Blob, onProgress?: (rows: number) => void): Promise<Record<string, number>> {
+  await validateBackup(file);
+  const safety = await createBackup(db);
+  let counts: Record<string, number>;
+  try {
+    counts = await writeBackup(db, file, onProgress);
+  } catch (e) {
+    try {
+      await writeBackup(db, safety);
+    } catch (e2) {
+      throw new BackupError('rollback-failed', `${String(e)} / ${String(e2)}`);
+    }
+    throw new BackupError('rolled-back', String(e));
+  }
   await db.syncLog.add({ at: Date.now(), kind: 'restore', counts });
   return counts;
 }

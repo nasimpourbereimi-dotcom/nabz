@@ -3,12 +3,13 @@ import { getDB } from '../db/schema';
 import { fa } from '../strings.fa';
 import { backupFileName, BackupError, createBackup, restoreBackup, saveFile } from '../backup/backup';
 import { IconBack } from '../ui/icons';
+import { logError } from '../lib/errorLog';
+import { TechReportSection } from '../ui/TechReport';
 import { AccentSection, HrProfileSection } from '../ui/SettingsSections';
-import { GUIDE_URL } from './Onboarding';
 
 const S = fa.settings;
 
-export function DataSettings({ onBack, onReimport }: { onBack: () => void; onReimport: () => void }) {
+export function DataSettings({ onBack, onReimport, onGuide }: { onBack: () => void; onReimport: () => void; onGuide: () => void }) {
   const [persisted, setPersisted] = useState<boolean | undefined>();
   const [usedMb, setUsedMb] = useState<number | undefined>();
   const [busy, setBusy] = useState(false);
@@ -29,22 +30,23 @@ export function DataSettings({ onBack, onReimport }: { onBack: () => void; onRei
     setBusy(true); setMsg(S.working);
     try {
       const blob = await createBackup(getDB());
-      await saveFile(blob, backupFileName());
+      const r = await saveFile(blob, backupFileName());
+      if (r !== 'cancelled') await getDB().settings.put({ key: 'lastBackup', value: Date.now() });
       setMsg(null);
     } catch (e) {
-      console.error(e); setMsg(fa.import.errors.unknown);
+      logError('backup', e); setMsg(fa.import.errors.unknown);
     } finally { setBusy(false); }
   };
 
   const doRestore = async (file: File) => {
     if (!confirm(S.restoreConfirm)) return;
-    setBusy(true); setMsg(S.working);
+    setBusy(true); setMsg(S.checking);
     try {
       const counts = await restoreBackup(getDB(), file, (n) => setMsg(S.restoring(n)));
       setMsg(S.restoreDone(Object.values(counts).reduce((a, b) => a + b, 0)));
       refresh();
     } catch (e) {
-      console.error(e);
+      logError('restore', e);
       setMsg(e instanceof BackupError ? S.backupErrors[e.code] : fa.import.errors.unknown);
     } finally { setBusy(false); }
   };
@@ -62,7 +64,7 @@ export function DataSettings({ onBack, onReimport }: { onBack: () => void; onRei
       <div class="card stack" style="margin-top:12px;gap:8px">
         <div style="font-weight:700">{fa.prefs.guide}</div>
         <div class="muted small" style="line-height:1.8">{fa.prefs.guideLead}</div>
-        <a class="btn secondary" href={GUIDE_URL} target="_blank" rel="noopener" style="text-decoration:none">{fa.prefs.guide}</a>
+        <button class="btn secondary" onClick={onGuide}>{fa.prefs.guide}</button>
       </div>
 
       <div class="muted" style="margin-top:20px;font-size:13px;font-weight:700;padding:0 4px">{fa.prefs.dataTitle}</div>
@@ -90,6 +92,8 @@ export function DataSettings({ onBack, onReimport }: { onBack: () => void; onRei
         <button class="btn secondary" disabled={busy} onClick={onReimport}>{S.reimport}</button>
         <div class="muted small" style="line-height:1.8">{S.reimportLead}</div>
       </div>
+
+      <TechReportSection />
 
       {msg && <div class="card info small fade-in" style="margin-top:12px" aria-live="polite">{msg}</div>}
 

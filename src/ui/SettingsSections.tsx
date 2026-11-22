@@ -6,6 +6,7 @@ import { fa } from '../strings.fa';
 import { faDigits } from '../lib/digits';
 import { toNumber } from '../sync/normalize';
 import { useLive } from './useLive';
+import { logError } from '../lib/errorLog';
 import type { HrProfile } from '../analytics/hr';
 
 const S = fa.prefs;
@@ -36,7 +37,7 @@ export function HrProfileSection() {
   const recompute = async (fn: () => Promise<unknown>) => {
     setBusy(S.recomputing);
     try { await fn(); await enrichWorkouts(getDB()); setBusy(S.recomputed); }
-    catch (e) { console.error(e); setBusy(fa.import.errors.unknown); }
+    catch (e) { logError('recompute', e); setBusy(fa.import.errors.unknown); }
   };
   const maxN = toNumber(max), restN = toNumber(rest);
   const valid = maxN !== undefined && restN !== undefined && maxN >= 120 && maxN <= 230 && restN >= 30 && restN <= 110 && restN < maxN;

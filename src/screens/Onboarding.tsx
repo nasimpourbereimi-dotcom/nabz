@@ -3,7 +3,6 @@ import { fa } from '../strings.fa';
 import { faDigits } from '../lib/digits';
 import { IconCheck, IconLock } from '../ui/icons';
 
-export const GUIDE_URL = 'https://github.com/nasimpourbereimi-dotcom/nabz/blob/main/docs/shortcuts-guide.fa.md';
 const O = fa.onboarding;
 
 export function isStandalone(): boolean {
@@ -61,7 +60,7 @@ export function InstallFirst({ onContinue }: { onContinue: () => void }) {
   );
 }
 
-export function ShortcutsIntro({ onDone }: { onDone: () => void }) {
+export function ShortcutsIntro({ onDone, onGuide }: { onDone: () => void; onGuide: () => void }) {
   return (
     <div class="screen no-tabs fade-in">
       <div class="eyebrow" style="margin-top:40px">{O.step2}</div>
@@ -76,7 +75,7 @@ export function ShortcutsIntro({ onDone }: { onDone: () => void }) {
         ))}
       </div>
       <div class="spacer stack" style="padding-top:24px">
-        <a class="btn secondary" href={GUIDE_URL} target="_blank" rel="noopener" style="text-decoration:none">{fa.prefs.guide}</a>
+        <button class="btn secondary" onClick={onGuide}>{fa.prefs.guide}</button>
         <button class="btn" onClick={onDone}>{O.finish}</button>
       </div>
     </div>

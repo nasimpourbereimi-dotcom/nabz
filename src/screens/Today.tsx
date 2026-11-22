@@ -16,7 +16,7 @@ import { tehranDateKey } from '../lib/time';
 
 const S = fa.today;
 
-export function TodayScreen({ onOpenData, onOpenImport }: { onOpenData: () => void; onOpenImport: () => void }) {
+export function TodayScreen({ onOpenData, onOpenImport, onGuide }: { onOpenData: () => void; onOpenImport: () => void; onGuide: () => void }) {
   const m = useLive(() => loadToday(getDB()));
   const sync = useSync();
 
@@ -29,7 +29,7 @@ export function TodayScreen({ onOpenData, onOpenImport }: { onOpenData: () => vo
         </div>
         <div class="row" style="gap:8px;margin-top:4px">
           <button class="chip" style="min-height:44px" onClick={() => sync.launch()} aria-label={fa.sync.button}>
-            <span class="lamp" />
+            <span class={m?.stale ? 'lamp stale' : 'lamp'} role="img" aria-label={m?.stale ? S.lampStale : S.lampFresh} />
             {m?.lastSync ? fa.sync.lastSync(faSyncTime(m.lastSync)) : fa.sync.button}
           </button>
           <button class="icon-btn" aria-label={fa.settings.title} onClick={onOpenData}><IconData size={20} /></button>
@@ -43,15 +43,28 @@ export function TodayScreen({ onOpenData, onOpenImport }: { onOpenData: () => vo
         onForce={() => sync.launch(true)}
         onExport={() => { sync.reset(); onOpenImport(); }}
         onClose={sync.reset}
+        onGuide={() => { sync.reset(); onGuide(); }}
       />
 
       {m && !m.hasData && <EmptyState text={S.noData} action={S.noDataAction} onAction={onOpenImport} />}
 
       {m?.hasData && (
         <>
-          {m.stale && <div class="muted small" style="margin-top:12px;line-height:1.8">{S.stale(faDate(Date.UTC(+m.asOf.slice(0, 4), +m.asOf.slice(5, 7) - 1, +m.asOf.slice(8, 10), 12)))}</div>}
+          {m.stale && !m.readiness && <div class="muted small" style="margin-top:12px;line-height:1.8">{S.stale(keyDate(m.asOf))}</div>}
 
-          {m.readiness ? (
+          {m.readiness && m.stale ? (
+            // Honest state: never present an old number as today's verdict (CLAUDE.md §7: low data → no judgment).
+            <div class="card stack" style="margin-top:18px;gap:14px;padding:20px">
+              <div class="row" style="gap:18px">
+                <ReadinessRing score={m.readiness.score} label={S.readiness} aria={S.readinessAria(m.readiness.score)} muted />
+                <div class="stack" style="flex:1;gap:8px">
+                  <div style="font-size:16px;font-weight:700;line-height:1.5">{S.staleHeadline(keyDate(m.readiness.date))}</div>
+                  <div class="muted small" style="line-height:1.8">{S.staleLead}</div>
+                </div>
+              </div>
+              <button class="btn" onClick={() => sync.launch()}>{S.staleAction}</button>
+            </div>
+          ) : m.readiness ? (
             <div class="card row" style="margin-top:18px;gap:18px;padding:20px">
               <ReadinessRing score={m.readiness.score} label={S.readiness} aria={S.readinessAria(m.readiness.score)} />
               <div class="stack" style="flex:1;gap:10px">
@@ -115,6 +128,14 @@ export function TodayScreen({ onOpenData, onOpenImport }: { onOpenData: () => vo
           </div>
 
           <LearningCard items={m.learning} />
+
+          {m.backupDue && (
+            <div class="card suggest stack" style="margin-top:12px;gap:10px;border-radius:18px;padding:14px 16px">
+              <div style="font-size:13px;font-weight:700;color:#D3C8FF">{S.backupTitle}</div>
+              <div style="font-size:12px;line-height:1.7">{S.backupLead}</div>
+              <button class="btn secondary" style="min-height:44px" onClick={onOpenData}>{S.backupAction}</button>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -153,4 +174,9 @@ function faSyncTime(ms: number): string {
   if (d === today) return `امروز ${faTime(ms)}`;
   if (d === y) return `دیروز ${faTime(ms)}`;
   return faDayLabel(ms).split(' ').slice(1).join(' ');
+}
+
+/** "YYYY-MM-DD" → "۲۷ آبان ۱۴۰۵" */
+function keyDate(key: string): string {
+  return faDate(Date.UTC(+key.slice(0, 4), +key.slice(5, 7) - 1, +key.slice(8, 10), 12));
 }

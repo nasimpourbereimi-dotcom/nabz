@@ -3,12 +3,13 @@ import type { LoadPoint } from '../analytics/load';
 import { zoneBounds, downsample, type HrPoint } from '../analytics/hr';
 import { faNumber } from '../lib/digits';
 
-export function ReadinessRing({ score, label, aria }: { score: number; label: string; aria: string }) {
+/** `muted`: the number is not from today, so it is shown greyed and without the accent. */
+export function ReadinessRing({ score, label, aria, muted }: { score: number; label: string; aria: string; muted?: boolean }) {
   const r = 54, c = 2 * Math.PI * r;
   return (
     <svg width="128" height="128" viewBox="0 0 128 128" role="img" aria-label={aria} style="flex-shrink:0">
       <circle cx="64" cy="64" r={r} fill="none" stroke="var(--track)" stroke-width="12" />
-      <circle class="ring-fill" cx="64" cy="64" r={r} fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round"
+      <circle class="ring-fill" cx="64" cy="64" r={r} fill="none" stroke={muted ? 'var(--muted)' : 'var(--accent)'} stroke-opacity={muted ? 0.5 : 1} stroke-width="12" stroke-linecap="round"
         stroke-dasharray={`${(c * score) / 100} ${c}`} transform="rotate(-90 64 64)" />
       <text x="64" y="70" text-anchor="middle" fill="var(--text)" font-family="Vazirmatn" font-size="36" font-weight="900">{faNumber(score)}</text>
       <text x="64" y="92" text-anchor="middle" fill="var(--muted)" font-family="Vazirmatn" font-size="11">{label}</text>
